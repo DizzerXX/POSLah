@@ -53,8 +53,11 @@ class ClientGeneratedKeysTest extends TestCase
                 $query->where('is_identity', 'YES')
                     ->orWhere('column_default', 'like', 'nextval%');
             })
-            // Laravel's own supporting tables are not part of the sync surface.
-            ->whereNotIn('table_name', ['migrations', 'jobs', 'job_batches', 'failed_jobs'])
+            // Framework infrastructure, not part of the sync surface: nothing client-side
+            // ever mints one of these keys, and none of these rows crosses the wire.
+            ->whereNotIn('table_name', [
+                'migrations', 'jobs', 'job_batches', 'failed_jobs', 'personal_access_tokens',
+            ])
             ->get();
 
         $this->assertCount(0, $identityColumns, 'Syncable tables must not auto-increment.');
