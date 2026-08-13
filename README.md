@@ -17,7 +17,7 @@ checkout path.
 | Step | Scope | State |
 |---|---|---|
 | 1 | Schema — migrations, models, factories, seeders | ✅ |
-| 2 | Sync engine — outbox, push/pull, reconciliation | — |
+| 2 | Sync engine — outbox, push/pull, reconciliation | ✅ |
 | 3 | Retail till loop (Flutter) | — |
 | 4 | Entitlement / module system | — |
 | 5 | F&B inventory — recipes, BOM expansion | — |
@@ -49,6 +49,67 @@ The seed produces one account with **both** modules enabled: a retail store with
 and an F&B menu with ingredients and recipes — so the divergence the architecture exists to handle
 is present from the first `artisan` run. It also produces two single-vertical accounts, which are
 what the entitlement tests in step 4 will need.
+
+The till:
+
+```bash
+cd till
+flutter pub get
+dart run build_runner build        # drift codegen
+flutter test
+```
+
+### Running the two halves against each other
+
+Most till tests run against an in-process fake, which on its own only proves the till agrees
+with *our description* of the contract. One test proves the two halves actually agree, and it
+is skipped unless pointed at a running server:
+
+```bash
+cd api && php artisan serve &
+php artisan poslah:device-token "Front Counter"      # prints a token, once
+
+cd ../till
+POSLAH_API_URL=http://127.0.0.1:8000 \
+POSLAH_DEVICE_TOKEN=<token> \
+flutter test test/sync_live_test.dart
+```
+
+## The sync engine
+
+The till is **local-first, not offline-fallback**. Every sale writes to local SQLite and returns
+to the cashier immediately — not as a fallback when the network drops, but on every sale, so the
+path that runs offline is the same path that runs all the time and cannot rot unnoticed.
+
+**Push results are per entry, never batch-level.** Each entry lands or fails alone. A batch-level
+transaction would let one malformed row wedge a till's queue permanently: the till resends, the
+same row fails, and nothing behind it ever syncs again.
+
+**Idempotency is the whole trick.** IDs are minted by the till, so every server-side insert is
+`ON CONFLICT DO NOTHING` and a resend is free. After a timeout the till simply sends again rather
+than asking whether the first attempt landed — a question that is racy, expensive, and unnecessary.
+
+**Stock levels are recomputed as a full SUM over the append-only movement log**, not adjusted by a
+delta. That is what makes a duplicate push incapable of double-decrementing: the safety rests on
+the projection being derived rather than on duplicate detection being perfect.
+
+**Negative stock raises an exception, never a rejection.** Two tills sell the last unit while
+offline; both sales are facts. Stock lands at `-1`, a `stock_exceptions` row is opened for the
+merchant, and no sale is refused.
+
+### Test scenarios covered
+
+| Scenario | Where |
+|---|---|
+| Three sales offline → reconnect, all land, stock reconciles | `api` · `SyncScenariosTest` |
+| Same batch sent twice → all duplicate, no double decrement | `api` · `SyncScenariosTest` |
+| **Kill the app mid-batch** → stranded entries recovered, resend is a duplicate | `till` · `crash_recovery_test` |
+| Two tills sell the last unit offline → both land, stock `-1`, one exception | `api` · `SyncScenariosTest` |
+| Poison entry in a batch of 50 → 48 land, 2 rejected, queue keeps draining | `api` · `SyncScenariosTest` |
+| Product deactivated server-side → arrives in the delta as `is_active: false` | `api` · `CatalogPullTest`, `till` · `catalog_applier_test` |
+| Batch arriving with dependents ahead of their parent still lands | `api` · `SyncScenariosTest` |
+| A stolen token cannot write into another account | `api` · `SyncAuthorizationTest` |
+| Full loop over real HTTP against real PostgreSQL | `till` · `sync_live_test` |
 
 ## The five architecture decisions
 

@@ -17,7 +17,7 @@ A multi-vertical POS system: **retail and F&B in one codebase**, not two product
 | Cache / queue | Redis 7 | — |
 | Realtime | Laravel Reverb (step 6) | `/api` |
 | Backoffice + KDS | Angular 18+ | `/backoffice` |
-| Till | Flutter + SQLite (step 3) | `/till` |
+| Till | Flutter 3.47 + SQLite via drift | `/till` |
 | Plans | The six planning documents | `/docs` |
 
 Local infrastructure is `docker compose up` (Postgres + Redis only). PSR-12 for PHP; idiomatic
@@ -28,7 +28,7 @@ Dart and TypeScript elsewhere.
 Each step is one session. Do not scaffold ahead into a later step.
 
 1. **Schema** — migrations, models, factories, seeders ✅
-2. **Sync engine** — outbox, push/pull, reconciliation
+2. **Sync engine** — outbox, push/pull, reconciliation ✅
 3. **Retail till loop** — Flutter, `direct` fulfilment only
 4. **Entitlement / module system** — `PosModule` registry, server middleware
 5. **F&B inventory** — recipes, BOM expansion, `StockStrategy` revision
@@ -151,6 +151,24 @@ Clock skew is a documented limitation, not a solved problem. Do not write code t
 - **Enums** are Postgres `varchar` + `CHECK`, backed by PHP enums in `App\Enums`. Adding a value is
   a migration, deliberately.
 - **Timestamps** are `timestamptz`. Account-level `timezone` governs display only.
+
+## Sync
+
+- **Per-entry results, never batch-level.** One malformed entry must not block the other
+  forty-nine. A batch-level failure lets a poison entry wedge a till's queue forever.
+- **Database failures must escape the per-entry transaction before being turned into a
+  result.** A failed statement aborts the surrounding PostgreSQL transaction; catching it
+  inside and returning normally commits a transaction the database has already abandoned,
+  and every later query fails with "current transaction is aborted" instead of the real error.
+- **`duplicate` is a success.** The till marks the entry synced and moves on.
+- **Stock levels are recomputed as a full `SUM(delta)`**, never `+= delta`. This is what makes
+  a resend incapable of double-decrementing.
+- **The pull cursor is the server's `server_time`**, never the device clock, and deactivated
+  rows must appear in the delta.
+- **Money is `int` minor units; stock is `int` milli-units on the till** — the same scale as
+  the server's `numeric(14,3)`, so decimals cross the wire as strings and convert losslessly.
+- **Nothing in the checkout path may await sync.** If a checkout screen knows the network
+  state, something has leaked.
 
 ## Testing
 
