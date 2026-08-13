@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Device;
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
 
 /**
  * Issues a sync token for a registered till.
@@ -24,9 +25,15 @@ class IssueDeviceTokenCommand extends Command
     {
         $identifier = (string) $this->argument('device');
 
+        // The id comparison is guarded: PostgreSQL raises rather than returning false when a
+        // uuid column is compared against text that is not a uuid, so an unguarded
+        // `where(id, 'Front Counter')` is an error, not a miss.
         $device = Device::query()
-            ->where('id', $identifier)
-            ->orWhere('device_name', $identifier)
+            ->when(
+                Str::isUuid($identifier),
+                fn ($query) => $query->where('id', $identifier),
+                fn ($query) => $query->where('device_name', $identifier),
+            )
             ->first();
 
         if ($device === null) {

@@ -55,3 +55,6 @@ Thumbs.db
 
 # ---- Local infrastructure ----
 /.docker-data/
+
+# Flutter/Dart generated sources are committed (drift codegen), but build caches are not.
+/till/.flutter-plugins-dependencies
