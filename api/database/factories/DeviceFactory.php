@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\Module;
 use App\Models\Account;
 use App\Models\Device;
 use App\Models\Store;
@@ -31,7 +32,7 @@ class DeviceFactory extends Factory
         ];
     }
 
-    public function assignedTo(\App\Enums\Module $module): static
+    public function assignedTo(Module $module): static
     {
         return $this->state(['assigned_module' => $module]);
     }

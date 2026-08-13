@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasUuidV7Key;
+use Database\Factories\ModifierFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,8 +14,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Modifier extends Model
 {
-    /** @use HasFactory<\Database\Factories\ModifierFactory> */
+    /** @use HasFactory<ModifierFactory> */
     use HasFactory;
+
     use HasUuidV7Key;
 
     protected $fillable = [

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\StockMovementReason;
 use App\Models\Concerns\HasUuidV7Key;
 use App\Models\Concerns\IsAppendOnly;
+use Database\Factories\StockMovementFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,8 +21,9 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  */
 class StockMovement extends Model
 {
-    /** @use HasFactory<\Database\Factories\StockMovementFactory> */
+    /** @use HasFactory<StockMovementFactory> */
     use HasFactory;
+
     use HasUuidV7Key;
     use IsAppendOnly;
 

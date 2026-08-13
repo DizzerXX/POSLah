@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\StockExceptionStatus;
 use App\Models\Concerns\HasUuidV7Key;
+use Database\Factories\StockExceptionFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,8 +20,9 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  */
 class StockException extends Model
 {
-    /** @use HasFactory<\Database\Factories\StockExceptionFactory> */
+    /** @use HasFactory<StockExceptionFactory> */
     use HasFactory;
+
     use HasUuidV7Key;
 
     protected $fillable = [

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasUuidV7Key;
+use Database\Factories\TimeEntryFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,8 +14,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class TimeEntry extends Model
 {
-    /** @use HasFactory<\Database\Factories\TimeEntryFactory> */
+    /** @use HasFactory<TimeEntryFactory> */
     use HasFactory;
+
     use HasUuidV7Key;
 
     protected $fillable = [

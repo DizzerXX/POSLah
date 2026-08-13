@@ -6,6 +6,7 @@ use App\Enums\LedgerEntryType;
 use App\Enums\PaymentMethod;
 use App\Models\Concerns\HasUuidV7Key;
 use App\Models\Concerns\IsAppendOnly;
+use Database\Factories\LedgerEntryFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,8 +20,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class LedgerEntry extends Model
 {
-    /** @use HasFactory<\Database\Factories\LedgerEntryFactory> */
+    /** @use HasFactory<LedgerEntryFactory> */
     use HasFactory;
+
     use HasUuidV7Key;
     use IsAppendOnly;
 

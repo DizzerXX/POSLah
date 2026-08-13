@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasUuidV7Key;
+use Database\Factories\RecipeLineFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,8 +14,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class RecipeLine extends Model
 {
-    /** @use HasFactory<\Database\Factories\RecipeLineFactory> */
+    /** @use HasFactory<RecipeLineFactory> */
     use HasFactory;
+
     use HasUuidV7Key;
 
     protected $fillable = ['id', 'product_id', 'ingredient_id', 'quantity'];

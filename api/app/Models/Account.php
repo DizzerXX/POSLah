@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\FulfillmentType;
 use App\Enums\Module;
 use App\Models\Concerns\HasUuidV7Key;
+use Database\Factories\AccountFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -18,8 +19,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Account extends Model
 {
-    /** @use HasFactory<\Database\Factories\AccountFactory> */
+    /** @use HasFactory<AccountFactory> */
     use HasFactory;
+
     use HasUuidV7Key;
 
     protected $fillable = [

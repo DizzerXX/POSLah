@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasUuidV7Key;
+use Database\Factories\StockLevelFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,8 +18,9 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  */
 class StockLevel extends Model
 {
-    /** @use HasFactory<\Database\Factories\StockLevelFactory> */
+    /** @use HasFactory<StockLevelFactory> */
     use HasFactory;
+
     use HasUuidV7Key;
 
     protected $fillable = ['id', 'store_id', 'stockable_type', 'stockable_id', 'quantity_on_hand'];

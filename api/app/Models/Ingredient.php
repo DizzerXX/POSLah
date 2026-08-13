@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\IngredientUnit;
 use App\Models\Concerns\HasUuidV7Key;
+use Database\Factories\IngredientFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,8 +16,9 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  */
 class Ingredient extends Model
 {
-    /** @use HasFactory<\Database\Factories\IngredientFactory> */
+    /** @use HasFactory<IngredientFactory> */
     use HasFactory;
+
     use HasUuidV7Key;
 
     protected $fillable = [
