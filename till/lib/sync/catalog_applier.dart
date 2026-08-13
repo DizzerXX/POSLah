@@ -72,6 +72,7 @@ class CatalogApplier {
               name: row['name'] as String,
               email: row['email'] as String,
               role: row['role'] as String,
+              pinHash: Value(row['pin_hash'] as String?),
               isActive: Value(_bool(row['is_active'])),
               updatedAt: _at(row),
             ),

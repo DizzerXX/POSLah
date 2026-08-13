@@ -29,7 +29,7 @@ Each step is one session. Do not scaffold ahead into a later step.
 
 1. **Schema** — migrations, models, factories, seeders ✅
 2. **Sync engine** — outbox, push/pull, reconciliation ✅
-3. **Retail till loop** — Flutter, `direct` fulfilment only
+3. **Retail till loop** — Flutter, `direct` fulfilment only ✅
 4. **Entitlement / module system** — `PosModule` registry, server middleware
 5. **F&B inventory** — recipes, BOM expansion, `StockStrategy` revision
 6. **KDS** — Reverb channels, kitchen screen, polling reconciliation
@@ -169,6 +169,25 @@ Clock skew is a documented limitation, not a solved problem. Do not write code t
   the server's `numeric(14,3)`, so decimals cross the wire as strings and convert losslessly.
 - **Nothing in the checkout path may await sync.** If a checkout screen knows the network
   state, something has leaked.
+
+## The till
+
+- **Nothing in the checkout path may await the network.** One local transaction, then return.
+  If a checkout screen knows the network state, something has leaked. Sync belongs in one
+  chip in the app chrome and a debug screen, nowhere else.
+- **Cart totals are derived on read**, never stored. Two sources of truth for one number
+  means the display and the charge eventually disagree.
+- **Snapshot at add-to-cart**, not at checkout: a pull-sync landing mid-transaction must not
+  reprice a line the cashier already quoted.
+- **Stock quantities on the till are integer milli-units** (1 unit = 1000), matching the
+  server's `numeric(14,3)` exactly so decimals convert losslessly with no double involved.
+- **Cash rounds to 5 sen; the order total does not.** `orders.grand_total` is the exact sale;
+  `ledger_entries.amount` is the money that moved. Card and QR are never rounded.
+- **The cached PIN hash is for managers and owners only**, and gating on it is UX. The server
+  re-reads the authorising user's role on every reversal, and that check is the one that
+  decides.
+- **An order's voided status is derived from the void ledger entry arriving**, never pushed
+  as an update. Every sync write is an insert.
 
 ## Testing
 

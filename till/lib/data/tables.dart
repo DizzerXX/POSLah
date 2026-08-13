@@ -47,6 +47,15 @@ class Users extends Table {
   TextColumn get name => text()();
   TextColumn get email => text()();
   TextColumn get role => text()();
+
+  /// bcrypt hash of the manager override PIN, present only for managers and owners.
+  ///
+  /// It is here so a void can be gated at the counter while the till is offline, which is
+  /// exactly when a void tends to happen. The login password hash is never sent and never
+  /// stored. This gate is UX regardless: the server verifies the authorising user's role
+  /// independently when the reversal syncs, and that is the check that decides.
+  TextColumn get pinHash => text().nullable()();
+
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   DateTimeColumn get updatedAt => dateTime()();
 

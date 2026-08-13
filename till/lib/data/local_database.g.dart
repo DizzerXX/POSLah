@@ -464,6 +464,17 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _pinHashMeta = const VerificationMeta(
+    'pinHash',
+  );
+  @override
+  late final GeneratedColumn<String> pinHash = GeneratedColumn<String>(
+    'pin_hash',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isActiveMeta = const VerificationMeta(
     'isActive',
   );
@@ -497,6 +508,7 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     name,
     email,
     role,
+    pinHash,
     isActive,
     updatedAt,
   ];
@@ -549,6 +561,12 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     } else if (isInserting) {
       context.missing(_roleMeta);
     }
+    if (data.containsKey('pin_hash')) {
+      context.handle(
+        _pinHashMeta,
+        pinHash.isAcceptableOrUnknown(data['pin_hash']!, _pinHashMeta),
+      );
+    }
     if (data.containsKey('is_active')) {
       context.handle(
         _isActiveMeta,
@@ -592,6 +610,10 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         DriftSqlType.string,
         data['${effectivePrefix}role'],
       )!,
+      pinHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pin_hash'],
+      ),
       isActive: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
@@ -615,6 +637,14 @@ class User extends DataClass implements Insertable<User> {
   final String name;
   final String email;
   final String role;
+
+  /// bcrypt hash of the manager override PIN, present only for managers and owners.
+  ///
+  /// It is here so a void can be gated at the counter while the till is offline, which is
+  /// exactly when a void tends to happen. The login password hash is never sent and never
+  /// stored. This gate is UX regardless: the server verifies the authorising user's role
+  /// independently when the reversal syncs, and that is the check that decides.
+  final String? pinHash;
   final bool isActive;
   final DateTime updatedAt;
   const User({
@@ -623,6 +653,7 @@ class User extends DataClass implements Insertable<User> {
     required this.name,
     required this.email,
     required this.role,
+    this.pinHash,
     required this.isActive,
     required this.updatedAt,
   });
@@ -634,6 +665,9 @@ class User extends DataClass implements Insertable<User> {
     map['name'] = Variable<String>(name);
     map['email'] = Variable<String>(email);
     map['role'] = Variable<String>(role);
+    if (!nullToAbsent || pinHash != null) {
+      map['pin_hash'] = Variable<String>(pinHash);
+    }
     map['is_active'] = Variable<bool>(isActive);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -646,6 +680,9 @@ class User extends DataClass implements Insertable<User> {
       name: Value(name),
       email: Value(email),
       role: Value(role),
+      pinHash: pinHash == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pinHash),
       isActive: Value(isActive),
       updatedAt: Value(updatedAt),
     );
@@ -662,6 +699,7 @@ class User extends DataClass implements Insertable<User> {
       name: serializer.fromJson<String>(json['name']),
       email: serializer.fromJson<String>(json['email']),
       role: serializer.fromJson<String>(json['role']),
+      pinHash: serializer.fromJson<String?>(json['pinHash']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -675,6 +713,7 @@ class User extends DataClass implements Insertable<User> {
       'name': serializer.toJson<String>(name),
       'email': serializer.toJson<String>(email),
       'role': serializer.toJson<String>(role),
+      'pinHash': serializer.toJson<String?>(pinHash),
       'isActive': serializer.toJson<bool>(isActive),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -686,6 +725,7 @@ class User extends DataClass implements Insertable<User> {
     String? name,
     String? email,
     String? role,
+    Value<String?> pinHash = const Value.absent(),
     bool? isActive,
     DateTime? updatedAt,
   }) => User(
@@ -694,6 +734,7 @@ class User extends DataClass implements Insertable<User> {
     name: name ?? this.name,
     email: email ?? this.email,
     role: role ?? this.role,
+    pinHash: pinHash.present ? pinHash.value : this.pinHash,
     isActive: isActive ?? this.isActive,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -704,6 +745,7 @@ class User extends DataClass implements Insertable<User> {
       name: data.name.present ? data.name.value : this.name,
       email: data.email.present ? data.email.value : this.email,
       role: data.role.present ? data.role.value : this.role,
+      pinHash: data.pinHash.present ? data.pinHash.value : this.pinHash,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -717,6 +759,7 @@ class User extends DataClass implements Insertable<User> {
           ..write('name: $name, ')
           ..write('email: $email, ')
           ..write('role: $role, ')
+          ..write('pinHash: $pinHash, ')
           ..write('isActive: $isActive, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -724,8 +767,16 @@ class User extends DataClass implements Insertable<User> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, accountId, name, email, role, isActive, updatedAt);
+  int get hashCode => Object.hash(
+    id,
+    accountId,
+    name,
+    email,
+    role,
+    pinHash,
+    isActive,
+    updatedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -735,6 +786,7 @@ class User extends DataClass implements Insertable<User> {
           other.name == this.name &&
           other.email == this.email &&
           other.role == this.role &&
+          other.pinHash == this.pinHash &&
           other.isActive == this.isActive &&
           other.updatedAt == this.updatedAt);
 }
@@ -745,6 +797,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   final Value<String> name;
   final Value<String> email;
   final Value<String> role;
+  final Value<String?> pinHash;
   final Value<bool> isActive;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -754,6 +807,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     this.name = const Value.absent(),
     this.email = const Value.absent(),
     this.role = const Value.absent(),
+    this.pinHash = const Value.absent(),
     this.isActive = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -764,6 +818,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     required String name,
     required String email,
     required String role,
+    this.pinHash = const Value.absent(),
     this.isActive = const Value.absent(),
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -779,6 +834,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     Expression<String>? name,
     Expression<String>? email,
     Expression<String>? role,
+    Expression<String>? pinHash,
     Expression<bool>? isActive,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -789,6 +845,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       if (name != null) 'name': name,
       if (email != null) 'email': email,
       if (role != null) 'role': role,
+      if (pinHash != null) 'pin_hash': pinHash,
       if (isActive != null) 'is_active': isActive,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -801,6 +858,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     Value<String>? name,
     Value<String>? email,
     Value<String>? role,
+    Value<String?>? pinHash,
     Value<bool>? isActive,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -811,6 +869,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       name: name ?? this.name,
       email: email ?? this.email,
       role: role ?? this.role,
+      pinHash: pinHash ?? this.pinHash,
       isActive: isActive ?? this.isActive,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -835,6 +894,9 @@ class UsersCompanion extends UpdateCompanion<User> {
     if (role.present) {
       map['role'] = Variable<String>(role.value);
     }
+    if (pinHash.present) {
+      map['pin_hash'] = Variable<String>(pinHash.value);
+    }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
@@ -855,6 +917,7 @@ class UsersCompanion extends UpdateCompanion<User> {
           ..write('name: $name, ')
           ..write('email: $email, ')
           ..write('role: $role, ')
+          ..write('pinHash: $pinHash, ')
           ..write('isActive: $isActive, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -9757,6 +9820,7 @@ typedef $$UsersTableCreateCompanionBuilder = UsersCompanion Function({
   required String name,
   required String email,
   required String role,
+  Value<String?> pinHash,
   Value<bool> isActive,
   required DateTime updatedAt,
   Value<int> rowid,
@@ -9767,6 +9831,7 @@ typedef $$UsersTableUpdateCompanionBuilder = UsersCompanion Function({
   Value<String> name,
   Value<String> email,
   Value<String> role,
+  Value<String?> pinHash,
   Value<bool> isActive,
   Value<DateTime> updatedAt,
   Value<int> rowid,
@@ -9803,6 +9868,11 @@ class $$UsersTableFilterComposer
 
   ColumnFilters<String> get role => $composableBuilder(
     column: $table.role,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pinHash => $composableBuilder(
+    column: $table.pinHash,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9851,6 +9921,11 @@ class $$UsersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get pinHash => $composableBuilder(
+    column: $table.pinHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isActive => $composableBuilder(
     column: $table.isActive,
     builder: (column) => ColumnOrderings(column),
@@ -9885,6 +9960,9 @@ class $$UsersTableAnnotationComposer
 
   GeneratedColumn<String> get role =>
       $composableBuilder(column: $table.role, builder: (column) => column);
+
+  GeneratedColumn<String> get pinHash =>
+      $composableBuilder(column: $table.pinHash, builder: (column) => column);
 
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
@@ -9926,6 +10004,7 @@ class $$UsersTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String> email = const Value.absent(),
                 Value<String> role = const Value.absent(),
+                Value<String?> pinHash = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -9935,6 +10014,7 @@ class $$UsersTableTableManager
                 name: name,
                 email: email,
                 role: role,
+                pinHash: pinHash,
                 isActive: isActive,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -9946,6 +10026,7 @@ class $$UsersTableTableManager
                 required String name,
                 required String email,
                 required String role,
+                Value<String?> pinHash = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -9955,6 +10036,7 @@ class $$UsersTableTableManager
                 name: name,
                 email: email,
                 role: role,
+                pinHash: pinHash,
                 isActive: isActive,
                 updatedAt: updatedAt,
                 rowid: rowid,

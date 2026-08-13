@@ -2,6 +2,7 @@
 
 namespace App\Sync;
 
+use App\Enums\UserRole;
 use App\Models\Account;
 use App\Models\Device;
 use Illuminate\Database\Query\Builder;
@@ -53,12 +54,7 @@ class CatalogPullService
                     fn ($q) => $q->where('account_id', $device->account_id)
                         ->select('id', 'account_id', 'name', 'address', 'tax_rate', 'updated_at'),
                 ),
-                'users' => $this->delta('users', $since, $serverTime,
-                    // Never the password or PIN hash. The till needs to know who may ring
-                    // up a sale, not how to verify them offline.
-                    fn ($q) => $q->where('account_id', $device->account_id)
-                        ->select('id', 'account_id', 'name', 'email', 'role', 'is_active', 'updated_at'),
-                ),
+                'users' => $this->userDelta($device, $since, $serverTime),
                 'categories' => $this->delta('categories', $since, $serverTime,
                     fn ($q) => $q->where('account_id', $device->account_id)
                         ->select('id', 'account_id', 'name', 'sort_order', 'is_active', 'updated_at'),
@@ -91,6 +87,39 @@ class CatalogPullService
                 ),
             ],
         ];
+    }
+
+    /**
+     * Staff, and the one place a credential leaves the server.
+     *
+     * The login password hash never goes anywhere. The **PIN** hash does, for managers and
+     * owners only, because a void happens at the counter with a customer waiting and the
+     * till has to be able to gate it while offline — which is precisely when a void is most
+     * likely to happen.
+     *
+     * The tradeoff, stated rather than hidden: someone who can root a till can extract a
+     * bcrypt hash of a four-digit PIN and brute-force it offline. That is acceptable here
+     * because of what the PIN actually defends against — a cashier voiding sales to pocket
+     * the cash — and a cashier has the till, not root on it. Anyone who does have root can
+     * already ring up whatever they like.
+     *
+     * It is a UX gate regardless. The server verifies the authorising user's role
+     * independently when the reversal syncs, and that check is the one that decides.
+     */
+    private function userDelta(Device $device, ?Carbon $since, Carbon $serverTime): array
+    {
+        $rows = $this->delta('users', $since, $serverTime,
+            fn ($q) => $q->where('account_id', $device->account_id)
+                ->select('id', 'account_id', 'name', 'email', 'role', 'pin_hash', 'is_active', 'updated_at'),
+        );
+
+        return array_map(static function (array $row): array {
+            if (! in_array($row['role'], [UserRole::Manager->value, UserRole::Owner->value], strict: true)) {
+                $row['pin_hash'] = null;
+            }
+
+            return $row;
+        }, $rows);
     }
 
     private function delta(string $table, ?Carbon $since, Carbon $serverTime, callable $scope): array

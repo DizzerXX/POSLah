@@ -18,5 +18,12 @@ enum RejectionReason: string
     /** A referenced row (order, user, customer) is not present and was not in this batch. */
     case MissingDependency = 'missing_dependency';
 
+    /**
+     * A void or refund arrived without a manager or owner authorising it. The till prompts
+     * for a PIN, but a rebuilt app can skip that prompt entirely — this is the check that
+     * makes the requirement real.
+     */
+    case UnauthorizedReversal = 'unauthorized_reversal';
+
     case ServerError = 'server_error';
 }

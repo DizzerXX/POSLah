@@ -159,7 +159,15 @@ class CatalogPullTest extends TestCase
         $this->pull()->assertOk()->assertJsonMissingPath('changes.stock_levels');
     }
 
-    public function test_password_and_pin_hashes_never_leave_the_server(): void
+    /**
+     * The login password hash never leaves the server, full stop.
+     *
+     * The **PIN** hash is a narrower case and step 3 changed the rule deliberately: it is
+     * sent for managers and owners only, so a void can be gated at the counter while the
+     * till is offline. A cashier's is always null — the till has no reason to verify one.
+     * ReversalAuthorizationTest covers the manager side of that split.
+     */
+    public function test_the_password_hash_never_leaves_and_a_cashier_pin_never_does_either(): void
     {
         User::factory()->for($this->account)->cashier()->create();
 
@@ -167,7 +175,7 @@ class CatalogPullTest extends TestCase
 
         $this->assertCount(1, $users);
         $this->assertArrayNotHasKey('password', $users[0]);
-        $this->assertArrayNotHasKey('pin_hash', $users[0]);
+        $this->assertNull($users[0]['pin_hash']);
         $this->assertArrayHasKey('role', $users[0]);
     }
 

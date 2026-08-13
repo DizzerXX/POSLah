@@ -18,7 +18,7 @@ checkout path.
 |---|---|---|
 | 1 | Schema — migrations, models, factories, seeders | ✅ |
 | 2 | Sync engine — outbox, push/pull, reconciliation | ✅ |
-| 3 | Retail till loop (Flutter) | — |
+| 3 | Retail till loop (Flutter) | ✅ |
 | 4 | Entitlement / module system | — |
 | 5 | F&B inventory — recipes, BOM expansion | — |
 | 6 | KDS — Reverb, kitchen screen, polling reconciliation | — |
@@ -108,6 +108,12 @@ merchant, and no sale is refused.
 | Poison entry in a batch of 50 → 48 land, 2 rejected, queue keeps draining | `api` · `SyncScenariosTest` |
 | Product deactivated server-side → arrives in the delta as `is_active: false` | `api` · `CatalogPullTest`, `till` · `catalog_applier_test` |
 | Batch arriving with dependents ahead of their parent still lands | `api` · `SyncScenariosTest` |
+| Multi-line sale with variants completed offline, no transport wired | `till` · `till_flow_test` |
+| Cash rounding to 5 sen, change on awkward amounts and overpayment | `till` · `money_test` |
+| Void writes a reversing entry; the original sale is byte-identical | `till` · `reversal_service_test` |
+| **Void authorised by a cashier is refused at the API**, not just hidden | `api` · `ReversalAuthorizationTest` |
+| Barcode resolves to the exact variant, not its parent product | `till` · `catalog_repository_test` |
+| Receipt renders from snapshots after the product is renamed and discontinued | `till` · `receipt_pdf_test` |
 | A stolen token cannot write into another account | `api` · `SyncAuthorizationTest` |
 | Full loop over real HTTP against real PostgreSQL | `till` · `sync_live_test` |
 
@@ -134,6 +140,30 @@ exists, rather than branching. A mixed cart is expressible in the schema from da
 **5 · Server-enforced entitlements.** `enabled_modules` is read from the database on every request,
 never from a token claim — so disabling a module takes effect immediately rather than at token
 expiry. Client-side gating is UX; a modified APK skips it.
+
+## The retail till
+
+Four screens — catalog, cart, checkout, receipt — and the plan is explicit about resisting a
+fifth. What matters is what is *absent* from them.
+
+**No network call in the checkout path, not even an optimistic one.** Checkout is one local
+SQLite transaction and then the cashier is free. The outbox drains afterwards and its success
+is invisible: there is no spinner, no "syncing…", no retry button. Sync appears in exactly one
+place, a small `3 pending` chip in the app chrome.
+
+**Receipt numbers are generated locally**, `T1-0042`, from a per-device prefix assigned at
+registration. Server-assigned numbering would hand a customer a receipt reading "pending"
+until the shop's wifi returned.
+
+**Cash rounds to the nearest 5 sen; the order does not.** The order records the exact
+arithmetic total and the ledger records the money that actually moved — two different facts,
+kept apart so a receipt and a ledger entry never sit a few sen apart with nothing to explain
+why. Card and QR are never rounded.
+
+**A void is a manager PIN on the till and a role check on the server.** The till caches a
+bcrypt PIN hash for managers and owners only, so a void works at the counter while offline.
+That gate is UX — a rebuilt APK skips it — so the server re-reads the authorising user's role
+when the reversal syncs and rejects it outright if they are not a manager or owner.
 
 ## Known limitations
 
