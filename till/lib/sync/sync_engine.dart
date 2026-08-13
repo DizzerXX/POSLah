@@ -1,6 +1,7 @@
 import '../data/local_database.dart';
 import 'backoff.dart';
 import 'catalog_applier.dart';
+import '../till/till_session.dart';
 import 'outbox.dart';
 import 'sync_transport.dart';
 
@@ -153,6 +154,13 @@ class SyncEngine {
     final response = await transport.pull(since: since);
 
     final report = await CatalogApplier(db).apply(response);
+
+    // Identity travels with the catalog. Doing it here rather than in a separate call means
+    // a till is provisioned by the same request that fills its catalog, and re-provisioned
+    // if the backoffice ever reassigns its prefix.
+    if (response['device'] != null) {
+      await TillSession.fromPull(db, response);
+    }
 
     await db.writeState(SyncStateKeys.lastPullAt, response['server_time'] as String);
 

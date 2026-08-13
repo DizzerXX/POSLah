@@ -49,6 +49,21 @@ class CatalogPullService
             // Re-read on every pull, not just at login: a till that stays logged in for
             // three weeks must not run on three-week-old entitlements.
             'enabled_modules' => $account->enabled_modules,
+            // The device's own identity, so a till can provision itself from its token.
+            //
+            // Without this a till has no way to learn the receipt prefix the backoffice
+            // assigned it, and the prefix is the whole reason two offline tills can number
+            // receipts independently without colliding. It has to arrive over the wire; the
+            // alternative is typing it into every device by hand.
+            'device' => [
+                'id' => $device->id,
+                'device_name' => $device->device_name,
+                'account_id' => $device->account_id,
+                'store_id' => $device->store_id,
+                'number_prefix' => $device->number_prefix,
+                // Null until step 4 pins a device to a vertical.
+                'assigned_module' => $device->assigned_module?->value,
+            ],
             'changes' => [
                 'stores' => $this->delta('stores', $since, $serverTime,
                     fn ($q) => $q->where('account_id', $device->account_id)

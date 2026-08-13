@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../bootstrap.dart';
 import '../data/local_database.dart';
 import '../sync/outbox.dart';
 import 'cart.dart';
@@ -38,16 +39,26 @@ final tillSessionProvider = FutureProvider<TillSession?>(
 /// cart the cashier has already quoted from.
 final tillBootProvider = FutureProvider<TillSession?>((ref) async {
   final db = ref.watch(localDatabaseProvider);
-  final session = await TillSession.load(db);
 
-  if (session != null) {
+  var session = await TillSession.load(db);
+
+  // First run with a token supplied: fetch the catalog, and learn our own identity and
+  // receipt prefix from the same response.
+  if (session == null && TillConfig.isConfigured) {
+    await provisionFromServer(db);
+    session = await TillSession.load(db);
+  }
+
+  final loaded = session;
+
+  if (loaded != null) {
     final store =
-        await (db.select(db.stores)..where((t) => t.id.equals(session.storeId))).getSingleOrNull();
+        await (db.select(db.stores)..where((t) => t.id.equals(loaded.storeId))).getSingleOrNull();
 
     if (store != null) ref.read(cartProvider.notifier).useTaxRate(store.taxRate);
   }
 
-  return session;
+  return loaded;
 });
 
 final cartProvider = NotifierProvider<CartController, CartState>(CartController.new);

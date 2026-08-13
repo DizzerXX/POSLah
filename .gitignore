@@ -35,6 +35,9 @@
 /till/.pub/
 /till/ios/Pods/
 /till/ios/.symlinks/
+/till/macos/Pods/
+/till/macos/Flutter/ephemeral/
+/till/ios/Flutter/ephemeral/
 /till/android/.gradle/
 /till/android/local.properties
 /till/android/key.properties

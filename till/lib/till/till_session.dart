@@ -24,6 +24,27 @@ class TillSession {
 
   final String? cashierUserId;
 
+  /// Provisions from a pull response's `device` block.
+  ///
+  /// A till holds exactly one credential — its token — and everything else it needs at sale
+  /// time has to arrive over the wire. The receipt prefix especially: it is assigned by the
+  /// backoffice at registration and is what makes two offline tills unable to collide, so
+  /// typing it into each device by hand would be a step nobody performs reliably.
+  static Future<TillSession> fromPull(LocalDatabase db, Map<String, dynamic> response) async {
+    final device = response['device'] as Map<String, dynamic>;
+
+    final session = TillSession(
+      deviceId: device['id'] as String,
+      accountId: device['account_id'] as String,
+      storeId: device['store_id'] as String,
+      numberPrefix: (device['number_prefix'] as String?) ?? 'T1',
+    );
+
+    await session.persist(db);
+
+    return session;
+  }
+
   static Future<TillSession?> load(LocalDatabase db) async {
     final deviceId = await db.readState(SyncStateKeys.deviceId);
     final accountId = await db.readState(SyncStateKeys.accountId);

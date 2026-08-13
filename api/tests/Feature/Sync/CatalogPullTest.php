@@ -205,6 +205,25 @@ class CatalogPullTest extends TestCase
             ->assertJsonCount(0, 'changes.users');
     }
 
+    /**
+     * A till has to learn its own receipt prefix from somewhere, and the only credential it
+     * holds is its token. Without this block, "T1-0042" could only be produced by someone
+     * typing the prefix into every device by hand.
+     */
+    public function test_the_pull_tells_the_device_who_it_is(): void
+    {
+        $this->device->update(['number_prefix' => 'T7']);
+
+        $this->pull()
+            ->assertOk()
+            ->assertJsonPath('device.id', $this->device->id)
+            ->assertJsonPath('device.store_id', $this->store->id)
+            ->assertJsonPath('device.account_id', $this->account->id)
+            ->assertJsonPath('device.number_prefix', 'T7')
+            // Pinning a device to a vertical is step 4's job.
+            ->assertJsonPath('device.assigned_module', null);
+    }
+
     private function pull(?string $since = null)
     {
         return $this->getJson(route('sync.pull', array_filter(['since' => $since])));

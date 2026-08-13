@@ -63,7 +63,8 @@ class _Boot extends ConsumerWidget {
                 padding: EdgeInsets.all(32),
                 child: Text(
                   'This till has not been provisioned.\n\n'
-                  'Write its device id, account, store and receipt prefix into sync_state.',
+                  'Run it with --dart-define=POSLAH_API_URL and POSLAH_DEVICE_TOKEN, '
+                  'using a token from: php artisan poslah:device-token "Front Counter"',
                   textAlign: TextAlign.center,
                 ),
               ),
