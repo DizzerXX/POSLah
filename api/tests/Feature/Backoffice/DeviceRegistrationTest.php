@@ -120,7 +120,6 @@ class DeviceRegistrationTest extends TestCase
 
         Sanctum::actingAs($this->owner, ['backoffice']);
 
-
         $this->patchJson(route('devices.update', $device), ['is_active' => false])->assertOk();
 
         $this->assertSame(0, DB::table('personal_access_tokens')

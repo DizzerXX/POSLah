@@ -31,6 +31,7 @@ class Order extends Model
 
     protected $fillable = [
         'id', 'account_id', 'store_id', 'device_id', 'cashier_user_id', 'customer_id',
+        'restaurant_table_id', 'service_type', 'customer_note',
         'order_number', 'status', 'payment_status', 'subtotal', 'tax_total',
         'discount_total', 'grand_total', 'tax_rate_snapshot', 'occurred_at', 'recorded_at',
         'sync_status',
@@ -111,6 +112,11 @@ class Order extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function table(): BelongsTo
+    {
+        return $this->belongsTo(RestaurantTable::class, 'restaurant_table_id');
     }
 
     public function lines(): HasMany
