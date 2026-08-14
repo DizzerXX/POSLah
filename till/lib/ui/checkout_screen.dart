@@ -146,7 +146,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   Future<void> _confirm(int? tendered) async {
     setState(() => _writing = true);
 
-    final session = ref.read(tillSessionProvider).value;
+    // Awaited from the boot provider rather than read off tillSessionProvider: the latter is
+    // only resolved if some widget happened to watch it, which made this work on the retail
+    // screen by accident and not at all on the F&B one.
+    final session = await ref.read(tillBootProvider.future);
 
     if (session == null) {
       setState(() => _writing = false);

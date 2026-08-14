@@ -50,6 +50,50 @@ class CartController extends Notifier<CartState> {
     );
   }
 
+  /// Adds a menu item, snapshotting its **recipe and modifiers** alongside the price.
+  ///
+  /// The recipe is captured here for the same reason the price is: a burger already in the
+  /// cart must decrement the ingredients it was actually made from, even if the merchant
+  /// reformulates it thirty seconds later.
+  void addMenuItem(
+    Product product, {
+    required List<RecipeLine> recipe,
+    List<Modifier> modifiers = const [],
+    int quantity = 1,
+  }) {
+    state = state.copyWith(
+      lines: [
+        ...state.lines,
+        CartLine(
+          lineId: _uuid.v7(),
+          productId: product.id,
+          nameSnapshot: product.name,
+          priceSnapshot: product.price,
+          quantity: quantity,
+          fulfillmentType: product.fulfillmentType,
+          tracksStock: product.tracksStock,
+          recipe: [
+            for (final line in recipe)
+              RecipeComponent(
+                ingredientId: line.ingredientId,
+                quantityMilli: line.quantityMilli,
+              ),
+          ],
+          modifiers: [
+            for (final modifier in modifiers)
+              CartModifier(
+                modifierId: modifier.id,
+                nameSnapshot: modifier.name,
+                priceDeltaSnapshot: modifier.priceDelta,
+                consumesIngredientId: modifier.consumesIngredientId,
+                consumesQuantityMilli: modifier.consumesQuantityMilli,
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
   void setQuantity(String lineId, int quantity) {
     if (quantity <= 0) {
       remove(lineId);

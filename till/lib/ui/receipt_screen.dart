@@ -173,8 +173,8 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
   /// That prompt is a UX gate: a rebuilt app skips it. The check that decides happens on the
   /// server when the reversing entry syncs, which re-reads the authorising user's role.
   Future<void> _void() async {
-    final session = ref.read(tillSessionProvider).value;
-    if (session == null) return;
+    final session = await ref.read(tillBootProvider.future);
+    if (session == null || !mounted) return;
 
     final authorizer = await showDialog<String>(
       context: context,

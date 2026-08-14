@@ -167,9 +167,9 @@ class CheckoutService {
                 fulfillmentType: line.fulfillmentType,
                 quantity: line.quantity,
                 lineTotal: line.lineTotal,
-                // A direct line is handed over at ring-up, so it is fulfilled the moment
-                // it is sold.
-                fulfillmentStatus: 'fulfilled',
+                // A direct line is handed over at ring-up and is fulfilled the moment it is
+                // sold. A routed one is the kitchen's now, so it starts pending.
+                fulfillmentStatus: line.fulfillmentType == 'routed' ? 'pending' : 'fulfilled',
               ),
             );
       }

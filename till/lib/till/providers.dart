@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../bootstrap.dart';
@@ -184,3 +185,44 @@ class ModuleSwitchController {
     _ref.invalidate(moduleRegistryProvider);
   }
 }
+
+
+/// A menu item with everything the till needs to sell it: its recipe and its modifiers.
+class MenuItem {
+  const MenuItem({required this.product, required this.recipe, required this.modifiers});
+
+  final Product product;
+  final List<RecipeLine> recipe;
+  final List<Modifier> modifiers;
+}
+
+/// The F&B menu.
+///
+/// Routed products, which is the same item-level branch the rest of the system uses — not a
+/// query for "products belonging to the F&B module", because no such column exists.
+final menuItemsProvider = FutureProvider<List<MenuItem>>((ref) async {
+  final db = ref.watch(localDatabaseProvider);
+  final recipes = ref.watch(recipeRepositoryProvider);
+
+  final products = await (db.select(db.products)
+        ..where((t) => t.isActive.equals(true) & t.fulfillmentType.equals('routed'))
+        ..orderBy([(t) => OrderingTerm.asc(t.name)]))
+      .get();
+
+  return [
+    for (final product in products)
+      MenuItem(
+        product: product,
+        recipe: await recipes.forProduct(product.id),
+        modifiers: await recipes.modifiersFor(product.id),
+      ),
+  ];
+});
+
+/// Cached per product and invalidated on stock change, rather than recomputed in a build
+/// method — the naive version is N recipes x M ingredients on every catalog render.
+final makeableHintProvider = FutureProvider.family<StockHint?, String>((ref, productId) async {
+  final registry = await ref.watch(moduleRegistryProvider.future);
+
+  return registry.current?.stockStrategy.hintFor(productId);
+});

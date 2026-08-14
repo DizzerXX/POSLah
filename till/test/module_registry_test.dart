@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:poslah_till/data/local_database.dart';
 import 'package:poslah_till/main.dart';
 import 'package:poslah_till/modules/fnb_module.dart';
+import 'package:poslah_till/ui/fnb_till_screen.dart';
 import 'package:poslah_till/modules/module_registry.dart';
 import 'package:poslah_till/modules/pos_module.dart';
 import 'package:poslah_till/modules/retail_module.dart';
@@ -295,7 +296,7 @@ void main() {
       await tester.tap(find.byKey(const Key('module-option-fnb')));
       await tester.pumpAndSettle();
 
-      expect(find.byType(FnbTillPlaceholder), findsOneWidget);
+      expect(find.byType(FnbTillScreen), findsOneWidget);
       expect(find.byKey(Key('product-${catalog.beansProductId}')), findsNothing);
     });
 
@@ -315,7 +316,7 @@ void main() {
       expect(find.byKey(const Key('switch-blocked')), findsOneWidget);
       // Still on retail, cart intact.
       expect(find.byKey(Key('product-${catalog.beansProductId}')), findsOneWidget);
-      expect(find.byType(FnbTillPlaceholder), findsNothing);
+      expect(find.byType(FnbTillScreen), findsNothing);
     });
   });
 }

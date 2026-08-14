@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 
+import '../ui/fnb_till_screen.dart';
+
 import '../data/local_database.dart';
 import '../till/cart.dart';
 import 'pos_module.dart';
@@ -26,11 +28,11 @@ class FnbModule implements PosModule {
 
   @override
   List<ModuleRoute> get routes => [
-        ModuleRoute(path: '/fnb', builder: (_) => const FnbTillPlaceholder()),
+        ModuleRoute(path: '/fnb', builder: (_) => const FnbTillScreen()),
       ];
 
   @override
-  Widget buildTillScreen() => const FnbTillPlaceholder();
+  Widget buildTillScreen() => const FnbTillScreen();
 
   @override
   CheckoutStrategy get checkoutStrategy => const FnbCheckoutStrategy();
@@ -176,24 +178,5 @@ class RecipeRepository {
 
   Future<Ingredient?> ingredient(String id) {
     return (_db.select(_db.ingredients)..where((t) => t.id.equals(id))).getSingleOrNull();
-  }
-}
-
-class FnbTillPlaceholder extends StatelessWidget {
-  const FnbTillPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Padding(
-          padding: EdgeInsets.all(32),
-          child: Text(
-            'F&B till\n\nRecipes expand on this device at sale time.\nThe menu UI arrives with the KDS work.',
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ),
-    );
   }
 }
