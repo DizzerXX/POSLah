@@ -30,9 +30,9 @@ Each step is one session. Do not scaffold ahead into a later step.
 1. **Schema** — migrations, models, factories, seeders ✅
 2. **Sync engine** — outbox, push/pull, reconciliation ✅
 3. **Retail till loop** — Flutter, `direct` fulfilment only ✅
-4. **Entitlement / module system** — `PosModule` registry, server middleware
-5. **F&B inventory** — recipes, BOM expansion, `StockStrategy` revision
-6. **KDS** — Reverb channels, kitchen screen, polling reconciliation
+4. **Entitlement / module system** — `PosModule` registry, server middleware ✅
+5. **F&B inventory** — recipes, BOM expansion, `StockStrategy` revision ✅
+6. **KDS** — Reverb channels, kitchen screen, polling reconciliation ✅
 
 ---
 
@@ -188,6 +188,22 @@ Clock skew is a documented limitation, not a solved problem. Do not write code t
   decides.
 - **An order's voided status is derived from the void ledger entry arriving**, never pushed
   as an update. Every sync write is an insert.
+
+## Realtime
+
+- **Nothing correctness-critical may depend on a broadcast arriving.** The KDS polls every
+  30s and reconciles; the socket is a fast path on top. A broadcast failure must never fail
+  the request that triggered it — a sale is not rejected because a kitchen screen was
+  unreachable.
+- **Channel authorisation checks module entitlement, not just authentication.** A retail-only
+  account holds valid credentials and must still be refused the kitchen channel.
+- **Test broadcasting against a real broadcaster, never the `log` driver.**
+  `LogBroadcaster::auth()` returns true unconditionally and never consults a channel
+  callback, so channel-auth tests on `log` pass no matter what those callbacks say.
+- **Never use a bare `Event::fake()`** — it fakes Eloquent model events too, and this
+  codebase mints UUIDv7 keys in a `creating` hook. Always fake a named list.
+- Order status is **derived from lines** on every transition and never set from a client
+  payload or a UI action.
 
 ## Testing
 

@@ -58,5 +58,13 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'stock-exceptions' },
     ],
   },
+  // The KDS sits outside the backoffice shell: it runs full-screen on a kitchen tablet and
+  // has no business showing navigation. Still module-gated — a retail account has no kitchen.
+  {
+    path: 'kds',
+    canActivate: [signedInGuard],
+    canMatch: [moduleGuard('fnb')],
+    loadComponent: () => import('./kds/kds.component').then((m) => m.KdsComponent),
+  },
   { path: '**', redirectTo: '' },
 ];

@@ -31,6 +31,17 @@
         <env name="DB_CONNECTION" value="pgsql"/>
         <env name="DB_DATABASE" value="poslah_testing"/>
         <env name="MAIL_MAILER" value="array"/>
+        <!--
+            The real broadcaster, not the log driver. LogBroadcaster::auth() returns true
+            unconditionally and never consults a channel callback, so channel authorisation
+            tests run against `log` pass no matter what those callbacks say — including for a
+            retail-only account subscribing to a kitchen. Nothing is actually broadcast here;
+            only the auth path is exercised.
+        -->
+        <env name="BROADCAST_CONNECTION" value="reverb"/>
+        <env name="REVERB_APP_ID" value="testing"/>
+        <env name="REVERB_APP_KEY" value="testing"/>
+        <env name="REVERB_APP_SECRET" value="testing"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

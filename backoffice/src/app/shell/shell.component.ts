@@ -39,6 +39,7 @@ import { ApiService } from '../core/api.service';
             Ingredients
           </a>
           <a routerLink="/fnb/recipes" routerLinkActive="on" data-testid="nav-recipes">Recipes</a>
+          <a routerLink="/kds" routerLinkActive="on" data-testid="nav-kds">Kitchen display</a>
         }
 
         <span class="group">Account</span>

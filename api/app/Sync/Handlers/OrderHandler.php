@@ -8,10 +8,15 @@ use App\Enums\Module;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\SyncStatus;
+use App\Events\OrderSentToKitchen;
+use App\Kitchen\OrderStatusDeriver;
 use App\Models\Device;
+use App\Models\Order;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Throwable;
 
 /**
  * An order arrives as one entry carrying its lines and their modifiers.
@@ -112,6 +117,34 @@ class OrderHandler extends EntityHandler
         }
 
         $this->insertLines($payload, $recordedAt);
+
+        // A routed order becomes a kitchen ticket the moment it lands. Dispatched after the
+        // rows are written so a listener cannot observe a half-built order — and outside any
+        // assumption of delivery, because the KDS polls regardless.
+        if ($this->requiredModule($payload) === Module::Fnb) {
+            $order = Order::query()->with('lines.modifiers')->find($payload['id']);
+
+            if ($order !== null) {
+                try {
+                    // Derived from the lines rather than trusted from the payload. The till
+                    // sends what it believed; the kitchen state is a consequence of what was
+                    // actually routed, and letting a client set it directly is what the state
+                    // machine forbids.
+                    app(OrderStatusDeriver::class)->apply($order);
+
+                    OrderSentToKitchen::dispatch($order->fresh(['lines.modifiers']));
+                } catch (Throwable $exception) {
+                    // A broadcast failure must never reject a sale. The order is already
+                    // written; the kitchen screen polls every 30 seconds and will pick it up
+                    // regardless, which is precisely why nothing here is allowed to depend on
+                    // a message arriving.
+                    Log::error('Kitchen notification failed', [
+                        'order_id' => $order->id,
+                        'exception' => $exception->getMessage(),
+                    ]);
+                }
+            }
+        }
 
         return true;
     }

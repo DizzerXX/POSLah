@@ -2,11 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 
+import { environment } from '../../environments/environment';
+
 import {
   Account,
   AuthenticatedUser,
   Customer,
   Ingredient,
+  KitchenTicket,
   LoginResponse,
   Recipe,
   StockException,
@@ -21,7 +24,8 @@ const ACCOUNT_KEY = 'poslah.account';
 export class ApiService {
   private readonly http = inject(HttpClient);
 
-  readonly baseUrl = 'http://127.0.0.1:8123';
+  /// Comes from the environment, swapped at build time. Never a literal in a component.
+  readonly baseUrl = environment.apiUrl;
 
   readonly user = signal<AuthenticatedUser | null>(readStored(USER_KEY));
   readonly account = signal<Account | null>(readStored(ACCOUNT_KEY));
@@ -81,6 +85,19 @@ export class ApiService {
 
   saveRecipe(productId: string, lines: { ingredient_id: string; quantity: string }[]) {
     return this.http.put<{ data: Recipe[] }>(`${this.baseUrl}/api/v1/recipes/${productId}`, { lines });
+  }
+
+  activeKitchenOrders() {
+    return this.http.get<{ server_time: string; data: KitchenTicket[] }>(
+      `${this.baseUrl}/api/v1/kitchen/active-orders`,
+    );
+  }
+
+  setLineStatus(lineId: string, status: 'pending' | 'ready') {
+    return this.http.patch<{ data: KitchenTicket }>(
+      `${this.baseUrl}/api/v1/kitchen/lines/${lineId}`,
+      { status },
+    );
   }
 
   updateModules(modules: string[]) {

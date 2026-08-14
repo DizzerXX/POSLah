@@ -21,7 +21,7 @@ checkout path.
 | 3 | Retail till loop (Flutter) | ✅ |
 | 4 | Entitlement / module system | ✅ |
 | 5 | F&B inventory — recipes, BOM expansion | ✅ |
-| 6 | KDS — Reverb, kitchen screen, polling reconciliation | — |
+| 6 | KDS — Reverb, kitchen screen, polling reconciliation | ✅ |
 
 ## Layout
 
@@ -124,6 +124,11 @@ merchant, and no sale is refused.
 | Ingredient goes negative → exception raised, sale stands | `api` · `RecipeTest` |
 | F&B endpoint 403s for a retail-only account (hand-crafted request) | `api` · `ModuleEntitlementTest` |
 | Unentitled module's routes are absent, not guarded | `till` · `module_registry_test` |
+| **Kill the WebSocket: polling recovers every missed ticket** | `backoffice` · `ticket-reconciler.spec` |
+| A ticket created with nothing listening is still returned by the poll | `api` · `KitchenDisplayTest` |
+| Retail-only account refused the kitchen **channel**, not just the API | `api` · `KitchenDisplayTest` |
+| Order status derives from lines; a void is never undone by them | `api` · `KitchenDisplayTest` |
+| A late-synced ticket shows its true elapsed time | `api` · `KitchenDisplayTest` |
 
 ## The five architecture decisions
 
@@ -172,6 +177,27 @@ why. Card and QR are never rounded.
 bcrypt PIN hash for managers and owners only, so a void works at the counter while offline.
 That gate is UX — a rebuilt APK skips it — so the server re-reads the authorising user's role
 when the reversal syncs and rejects it outright if they are not a manager or owner.
+
+## The kitchen display
+
+A web page, not a second app: kitchens run cheap tablets, a browser is universal, and a
+second Flutter app would double the release surface for a read-mostly screen.
+
+**Polling is the source of truth; the socket is an optimisation.** Reverb drops messages on
+network blips, tab suspension and server restarts, and a missed ticket is a customer waiting
+for food nobody is cooking — silently, because a missed ticket looks exactly like no ticket.
+So the screen polls `GET /api/v1/kitchen/active-orders` every 30 seconds and reconciles;
+anything the server reports that the screen lacks is rendered whether or not an event ever
+arrived. On reconnect it discards local state and refetches rather than replaying.
+
+This mirrors the till's stance rather than repeating its mechanism. The till is local-first
+because it can be; the KDS cannot be — it is inherently a live view of other devices' state,
+so when it loses connection it freezes and says so rather than showing stale tickets as
+current.
+
+**Channel authorisation checks entitlement, not just authentication.** A retail-only account
+holds valid credentials and is still refused `private-store.{id}.kitchen` — otherwise the
+kitchen would be readable by listening while the API refused.
 
 ## Known limitations
 

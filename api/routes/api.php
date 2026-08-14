@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Backoffice\CatalogController;
 use App\Http\Controllers\Api\V1\Backoffice\CustomerController;
 use App\Http\Controllers\Api\V1\Backoffice\RecipeController;
 use App\Http\Controllers\Api\V1\Backoffice\StockExceptionController;
+use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\SyncPullController;
 use App\Http\Controllers\Api\V1\SyncPushController;
 use App\Models\Device;
@@ -62,4 +63,20 @@ Route::prefix('v1')->group(function () {
             Route::get('product-variants', [CatalogController::class, 'variants'])->name('variants.index');
         });
     });
+});
+
+/*
+ * Kitchen display. F&B-gated: a retail-only account has no kitchen, and the middleware reads
+ * that from the accounts row on every request.
+ *
+ * activeOrders is the KDS's primary source of truth, polled on a timer. The socket is an
+ * optimisation layered on top, never a dependency — the same stance the till takes toward
+ * the network, arrived at by a different mechanism.
+ */
+Route::prefix('v1')->middleware(['auth:sanctum', 'module:fnb'])->group(function () {
+    Route::get('kitchen/active-orders', [KitchenController::class, 'activeOrders'])
+        ->name('kitchen.active-orders');
+
+    Route::patch('kitchen/lines/{orderLine}', [KitchenController::class, 'updateLine'])
+        ->name('kitchen.lines.update');
 });

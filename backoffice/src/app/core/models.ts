@@ -111,3 +111,24 @@ export interface Recipe {
   /** Naive and indicative. Real COGS is out of scope for v1. */
   indicative_cost: MinorUnits;
 }
+
+export interface KitchenLine {
+  id: string;
+  name: string;
+  quantity: number;
+  status: 'pending' | 'ready' | 'fulfilled';
+  modifiers: string[];
+}
+
+/**
+ * A kitchen ticket. Routed lines only — the filter is applied server-side, so a mixed order
+ * is correct here from the first request.
+ */
+export interface KitchenTicket {
+  id: string;
+  order_number: string | null;
+  status: string;
+  /** The client clock, deliberately: a ticket's age runs from when the customer ordered. */
+  placed_at: string | null;
+  lines: KitchenLine[];
+}
