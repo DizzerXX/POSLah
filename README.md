@@ -183,7 +183,9 @@ when the reversal syncs and rejects it outright if they are not a manager or own
 A web page, not a second app: kitchens run cheap tablets, a browser is universal, and a
 second Flutter app would double the release surface for a read-mostly screen.
 
-**Polling is the source of truth; the socket is an optimisation.** Reverb drops messages on
+**Polling is the source of truth; the socket is an optimisation.** Deleting the socket would
+leave a kitchen that still works and is merely slower — that is the test of whether it is
+load-bearing, and it is not. Reverb drops messages on
 network blips, tab suspension and server restarts, and a missed ticket is a customer waiting
 for food nobody is cooking — silently, because a missed ticket looks exactly like no ticket.
 So the screen polls `GET /api/v1/kitchen/active-orders` every 30 seconds and reconciles;
@@ -198,6 +200,13 @@ current.
 **Channel authorisation checks entitlement, not just authentication.** A retail-only account
 holds valid credentials and is still refused `private-store.{id}.kitchen` — otherwise the
 kitchen would be readable by listening while the API refused.
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs all three suites on every push: the API against a real
+PostgreSQL service, the till through `flutter analyze` and `flutter test`, and the backoffice
+through a build plus Karma. It also checks that drift's committed generated sources are still
+in step with the table definitions, which is the kind of staleness nobody notices by hand.
 
 ## Known limitations
 
