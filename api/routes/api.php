@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\Backoffice\AccountModuleController;
 use App\Http\Controllers\Api\V1\Backoffice\CatalogController;
 use App\Http\Controllers\Api\V1\Backoffice\CustomerController;
+use App\Http\Controllers\Api\V1\Backoffice\DeviceController;
 use App\Http\Controllers\Api\V1\Backoffice\RecipeController;
 use App\Http\Controllers\Api\V1\Backoffice\StockExceptionController;
 use App\Http\Controllers\Api\V1\KitchenController;
@@ -46,6 +47,10 @@ Route::prefix('v1')->group(function () {
         // Shared by both verticals, and deliberately ungated. Switching the backoffice to
         // F&B filters inventory and reporting; it does not load a different customer list.
         Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
+
+        Route::get('devices', [DeviceController::class, 'index'])->name('devices.index');
+        Route::post('devices', [DeviceController::class, 'store'])->name('devices.store');
+        Route::patch('devices/{device}', [DeviceController::class, 'update'])->name('devices.update');
 
         Route::get('account/modules', [AccountModuleController::class, 'show'])->name('account.modules.show');
         Route::patch('account/modules', [AccountModuleController::class, 'update'])->name('account.modules.update');
