@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureBackofficeUser;
 use App\Http\Middleware\EnsureDeviceToken;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'abilities' => CheckAbilities::class,
             'ability' => CheckForAnyAbility::class,
             'device' => EnsureDeviceToken::class,
+            'backoffice' => EnsureBackofficeUser::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

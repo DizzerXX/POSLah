@@ -61,3 +61,4 @@ Thumbs.db
 
 # Flutter/Dart generated sources are committed (drift codegen), but build caches are not.
 /till/.flutter-plugins-dependencies
+/backoffice/dist/
