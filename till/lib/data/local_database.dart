@@ -78,6 +78,13 @@ class SyncStateKeys {
   static const nextSequence = 'next_sequence';
 
   static const enabledModules = 'enabled_modules';
+
+  /// Set when the backoffice pins this physical till to one vertical. Null means unpinned,
+  /// and the switcher appears if the account has more than one module.
+  static const assignedModule = 'assigned_module';
+
+  /// Which module the cashier last had open.
+  static const activeModule = 'active_module';
 }
 
 /// The on-device database file.

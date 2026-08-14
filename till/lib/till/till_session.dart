@@ -11,6 +11,7 @@ class TillSession {
     required this.accountId,
     required this.storeId,
     required this.numberPrefix,
+    this.assignedModule,
     this.cashierUserId,
   });
 
@@ -21,6 +22,10 @@ class TillSession {
   /// "T1". Assigned by the backoffice at device registration and unique per store, which is
   /// what lets two offline tills number receipts independently without colliding.
   final String numberPrefix;
+
+  /// The vertical this physical till is pinned to, or null when unpinned. A pinned device
+  /// registers exactly one module and therefore shows no switcher.
+  final String? assignedModule;
 
   final String? cashierUserId;
 
@@ -38,6 +43,7 @@ class TillSession {
       accountId: device['account_id'] as String,
       storeId: device['store_id'] as String,
       numberPrefix: (device['number_prefix'] as String?) ?? 'T1',
+      assignedModule: device['assigned_module'] as String?,
     );
 
     await session.persist(db);
@@ -60,6 +66,7 @@ class TillSession {
       accountId: accountId,
       storeId: storeId,
       numberPrefix: prefix,
+      assignedModule: await db.readState(SyncStateKeys.assignedModule),
       cashierUserId: await db.readState('cashier_user_id'),
     );
   }
@@ -69,10 +76,23 @@ class TillSession {
     await db.writeState(SyncStateKeys.accountId, accountId);
     await db.writeState(SyncStateKeys.storeId, storeId);
     await db.writeState(SyncStateKeys.numberPrefix, numberPrefix);
+    await db.writeState(SyncStateKeys.assignedModule, assignedModule);
 
     if (cashierUserId != null) {
       await db.writeState('cashier_user_id', cashierUserId);
     }
+  }
+
+  /// Test/provisioning helper: the same session pinned to a vertical.
+  TillSession withPin(String? moduleId) {
+    return TillSession(
+      deviceId: deviceId,
+      accountId: accountId,
+      storeId: storeId,
+      numberPrefix: numberPrefix,
+      assignedModule: moduleId,
+      cashierUserId: cashierUserId,
+    );
   }
 
   TillSession withCashier(String? userId) {
@@ -81,6 +101,7 @@ class TillSession {
       accountId: accountId,
       storeId: storeId,
       numberPrefix: numberPrefix,
+      assignedModule: assignedModule,
       cashierUserId: userId,
     );
   }

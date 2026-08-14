@@ -7,6 +7,7 @@ import '../till/cart.dart';
 import '../till/catalog_repository.dart';
 import '../till/providers.dart';
 import 'cart_review_screen.dart';
+import 'widgets/module_switcher.dart';
 import 'widgets/sync_indicator.dart';
 import 'widgets/variant_sheet.dart';
 
@@ -24,7 +25,7 @@ class TillScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Till'),
-        actions: const [SyncIndicator(), SizedBox(width: 12)],
+        actions: [ModuleSwitcher(), SyncIndicator(), SizedBox(width: 12)],
       ),
       body: Row(
         children: [

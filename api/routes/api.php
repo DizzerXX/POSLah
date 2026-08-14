@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\Backoffice\AccountModuleController;
+use App\Http\Controllers\Api\V1\Backoffice\CatalogController;
+use App\Http\Controllers\Api\V1\Backoffice\CustomerController;
 use App\Http\Controllers\Api\V1\Backoffice\StockExceptionController;
 use App\Http\Controllers\Api\V1\SyncPullController;
 use App\Http\Controllers\Api\V1\SyncPushController;
@@ -37,5 +40,23 @@ Route::prefix('v1')->group(function () {
 
         Route::post('stock-exceptions/{stockException}/resolve', [StockExceptionController::class, 'resolve'])
             ->name('stock-exceptions.resolve');
+
+        // Shared by both verticals, and deliberately ungated. Switching the backoffice to
+        // F&B filters inventory and reporting; it does not load a different customer list.
+        Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
+
+        Route::get('account/modules', [AccountModuleController::class, 'show'])->name('account.modules.show');
+        Route::patch('account/modules', [AccountModuleController::class, 'update'])->name('account.modules.update');
+
+        // Vertical-specific. The middleware reads enabled_modules from the accounts row on
+        // every request, so revoking a module takes effect immediately rather than at token
+        // expiry.
+        Route::middleware('module:fnb')->group(function () {
+            Route::get('ingredients', [CatalogController::class, 'ingredients'])->name('ingredients.index');
+        });
+
+        Route::middleware('module:retail')->group(function () {
+            Route::get('product-variants', [CatalogController::class, 'variants'])->name('variants.index');
+        });
     });
 });

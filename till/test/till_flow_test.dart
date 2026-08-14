@@ -35,6 +35,10 @@ void main() {
       numberPrefix: 'T1',
       cashierUserId: 'u-cashier',
     ).persist(db);
+
+    // A provisioned till has pulled, so it knows what the account is entitled to. Without
+    // this the registry is empty and no module's till screen mounts at all.
+    await db.writeState(SyncStateKeys.enabledModules, 'retail');
   });
 
   tearDown(() => db.close());

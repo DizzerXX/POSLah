@@ -2,6 +2,8 @@
 
 namespace App\Sync\Handlers;
 
+use App\Enums\Module;
+use App\Models\Account;
 use App\Models\Device;
 use App\Sync\EntryResult;
 use App\Sync\PushEntry;
@@ -29,6 +31,19 @@ abstract class EntityHandler
      * @return bool true if a row was inserted, false if it was already present
      */
     abstract protected function persist(array $payload, Device $device, Carbon $recordedAt): bool;
+
+    /**
+     * Which vertical this particular entry belongs to, if any.
+     *
+     * Derived from the entry itself rather than from anything account-level, because that is
+     * where the branch actually lives: a routed line is F&B, an ingredient movement is F&B,
+     * and everything else is neither. Most entries return null and are simply not a
+     * vertical's business.
+     */
+    protected function requiredModule(array $payload): ?Module
+    {
+        return null;
+    }
 
     /**
      * Payload keys that must match the authenticated device's own tenancy.
@@ -63,6 +78,22 @@ abstract class EntityHandler
                 RejectionReason::Validation,
                 'entity_id does not match the payload id.',
             );
+        }
+
+        $module = $this->requiredModule($payload);
+
+        if ($module !== null) {
+            // Read from the accounts row, not the token: an admin disabling F&B at noon must
+            // take effect on the next batch, not whenever this device's token expires.
+            $account = Account::query()->find($device->account_id);
+
+            if ($account === null || ! $account->hasModule($module)) {
+                return EntryResult::rejected(
+                    $entry->id,
+                    RejectionReason::ModuleNotEnabled,
+                    "This account does not have the {$module->value} module enabled.",
+                );
+            }
         }
 
         foreach ($this->tenantKeys() as $payloadKey => $deviceAttribute) {

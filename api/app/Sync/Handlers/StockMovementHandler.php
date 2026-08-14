@@ -2,6 +2,7 @@
 
 namespace App\Sync\Handlers;
 
+use App\Enums\Module;
 use App\Enums\StockableType;
 use App\Enums\StockMovementReason;
 use App\Models\Device;
@@ -35,6 +36,19 @@ class StockMovementHandler extends EntityHandler
             'note' => ['nullable', 'string'],
             'occurred_at' => ['required', 'date'],
         ];
+    }
+
+    /**
+     * Retail holds stock against a sellable variant, F&B against an ingredient that is never
+     * itself sold. The stockable *is* the vertical.
+     */
+    protected function requiredModule(array $payload): ?Module
+    {
+        return match ($payload['stockable_type'] ?? null) {
+            StockableType::Ingredient->value => Module::Fnb,
+            StockableType::ProductVariant->value => Module::Retail,
+            default => null,
+        };
     }
 
     protected function tenantKeys(): array

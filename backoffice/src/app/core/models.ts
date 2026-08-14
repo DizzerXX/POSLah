@@ -56,3 +56,36 @@ export interface StockException {
   resolved_at: string | null;
   created_at: string | null;
 }
+
+/**
+ * Shared by both verticals, and there is exactly one of these.
+ *
+ * If a RetailCustomer and an FnbCustomer ever appear beside each other, the architecture has
+ * been lost — switching the backoffice to F&B filters inventory and reporting, not this.
+ */
+export interface Customer {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  created_at: string | null;
+}
+
+/** F&B only. The stockable a menu item decrements; never sold on its own. */
+export interface Ingredient {
+  id: string;
+  name: string;
+  unit: string;
+  low_stock_threshold: string;
+  cost_per_unit: number | null;
+  is_active: boolean;
+}
+
+/** Retail only. The stockable a SKU decrements. */
+export interface Variant {
+  id: string;
+  name: string;
+  sku: string | null;
+  barcode: string | null;
+  is_active: boolean;
+}

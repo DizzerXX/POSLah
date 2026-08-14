@@ -2,7 +2,15 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 
-import { Account, AuthenticatedUser, LoginResponse, StockException } from './models';
+import {
+  Account,
+  AuthenticatedUser,
+  Customer,
+  Ingredient,
+  LoginResponse,
+  StockException,
+  Variant,
+} from './models';
 
 const TOKEN_KEY = 'poslah.token';
 const USER_KEY = 'poslah.user';
@@ -45,6 +53,42 @@ export class ApiService {
     localStorage.removeItem(ACCOUNT_KEY);
     this.user.set(null);
     this.account.set(null);
+  }
+
+  /** Reads straight off the signed-in account. Rendering only — the server authorises. */
+  hasModule(moduleId: string): boolean {
+    return this.account()?.enabled_modules.includes(moduleId) ?? false;
+  }
+
+  customers(search?: string) {
+    const query = search ? `?search=${encodeURIComponent(search)}` : '';
+
+    return this.http.get<{ data: Customer[] }>(`${this.baseUrl}/api/v1/customers${query}`);
+  }
+
+  ingredients() {
+    return this.http.get<{ data: Ingredient[] }>(`${this.baseUrl}/api/v1/ingredients`);
+  }
+
+  productVariants() {
+    return this.http.get<{ data: Variant[] }>(`${this.baseUrl}/api/v1/product-variants`);
+  }
+
+  updateModules(modules: string[]) {
+    return this.http
+      .patch<{ data: { enabled_modules: string[] } }>(`${this.baseUrl}/api/v1/account/modules`, {
+        enabled_modules: modules,
+      })
+      .pipe(
+        tap((response) => {
+          const account = this.account();
+          if (account) {
+            const updated = { ...account, enabled_modules: response.data.enabled_modules };
+            localStorage.setItem(ACCOUNT_KEY, JSON.stringify(updated));
+            this.account.set(updated);
+          }
+        }),
+      );
   }
 
   stockExceptions(status?: 'open' | 'resolved'): Observable<{ data: StockException[] }> {

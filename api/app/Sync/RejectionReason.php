@@ -25,5 +25,12 @@ enum RejectionReason: string
      */
     case UnauthorizedReversal = 'unauthorized_reversal';
 
+    /**
+     * The entry belongs to a vertical this account is not entitled to — an F&B order
+     * arriving from a retail-only account. Rejected on its own; the other entries in the
+     * batch still land.
+     */
+    case ModuleNotEnabled = 'module_not_enabled';
+
     case ServerError = 'server_error';
 }

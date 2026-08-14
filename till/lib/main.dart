@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'data/local_database.dart';
 import 'sync/outbox.dart';
 import 'till/providers.dart';
-import 'ui/till_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +41,37 @@ class PoslahTillApp extends ConsumerWidget {
   }
 }
 
+/// Mounts whichever module is active.
+///
+/// A vertical that is not registered has no screen and no route here, so there is nothing
+/// for a stray navigation to reach.
+class _ModuleHost extends ConsumerWidget {
+  const _ModuleHost();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final registry = ref.watch(moduleRegistryProvider);
+
+    return registry.when(
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (error, _) => Scaffold(body: Center(child: Text('$error'))),
+      data: (registry) {
+        final module = registry.current;
+
+        if (module == null) {
+          // Prevented by a database CHECK, so reaching this means something upstream is
+          // badly wrong rather than that a merchant has no modules.
+          return const Scaffold(
+            body: Center(child: Text('This account has no modules enabled.')),
+          );
+        }
+
+        return module.buildTillScreen();
+      },
+    );
+  }
+}
+
 class _Boot extends ConsumerWidget {
   const _Boot();
 
@@ -72,7 +102,9 @@ class _Boot extends ConsumerWidget {
           );
         }
 
-        return const TillScreen();
+        // The active module builds its own till screen. Nothing here knows which vertical
+        // it is; that is the entire point of the registry.
+        return const _ModuleHost();
       },
     );
   }

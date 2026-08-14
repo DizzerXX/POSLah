@@ -4,6 +4,7 @@ namespace App\Sync\Handlers;
 
 use App\Enums\FulfillmentType;
 use App\Enums\LineFulfillmentStatus;
+use App\Enums\Module;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\SyncStatus;
@@ -60,6 +61,22 @@ class OrderHandler extends EntityHandler
             'lines.*.modifiers.*.name_snapshot' => ['required', 'string', 'max:255'],
             'lines.*.modifiers.*.price_delta_snapshot' => ['required', 'integer'],
         ];
+    }
+
+    /**
+     * An order is F&B business when any line is routed to a kitchen. Not when the account
+     * happens to have F&B on — a retail sale from a dual-vertical shop is still a retail
+     * sale, and the schema has supported mixed carts since day one.
+     */
+    protected function requiredModule(array $payload): ?Module
+    {
+        foreach ($payload['lines'] ?? [] as $line) {
+            if (($line['fulfillment_type'] ?? null) === FulfillmentType::Routed->value) {
+                return Module::Fnb;
+            }
+        }
+
+        return null;
     }
 
     protected function persist(array $payload, Device $device, Carbon $recordedAt): bool

@@ -2,6 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../bootstrap.dart';
 import '../data/local_database.dart';
+import '../modules/fnb_module.dart';
+import '../modules/module_registry.dart';
+import '../modules/pos_module.dart';
+import '../modules/retail_module.dart';
 import '../sync/outbox.dart';
 import 'cart.dart';
 import 'cart_controller.dart';
@@ -105,3 +109,65 @@ final catalogItemsProvider = FutureProvider<List<CatalogItem>>((ref) {
 final pendingSyncCountProvider = FutureProvider<int>(
   (ref) => ref.watch(outboxProvider).countByStatus(OutboxStatus.pending),
 );
+
+
+/// The modules this till may show, built from what the server said and what the device is
+/// pinned to.
+///
+/// Rebuilt on every pull, not only at sign-in: a till left signed in for three weeks must
+/// not still be running on three-week-old entitlements. If a module disappears while it is
+/// the active one, the registry simply no longer contains it and `current` falls back to a
+/// remaining module — there is no "you have lost access" screen because there is no route
+/// left to show one on.
+final moduleRegistryProvider = FutureProvider<ModuleRegistry>((ref) async {
+  final db = ref.watch(localDatabaseProvider);
+  final session = await ref.watch(tillBootProvider.future);
+
+  final enabled = (await db.readState(SyncStateKeys.enabledModules) ?? '')
+      .split(',')
+      .where((value) => value.isNotEmpty)
+      .toList();
+
+  final available = <String, PosModule>{
+    'retail': RetailModule(ref.watch(catalogRepositoryProvider), session?.storeId ?? ''),
+    'fnb': const FnbModule(),
+  };
+
+  return ModuleRegistry.build(
+    enabledModules: enabled,
+    available: available,
+    assignedModule: session?.assignedModule,
+    activeId: await db.readState(SyncStateKeys.activeModule),
+  );
+});
+
+/// Switching verticals.
+///
+/// **An in-progress cart blocks the switch**, and is not migrated across. Migrating one
+/// would be a half-built mixed cart, which is a v2 feature and worse absent-but-implied than
+/// simply refused.
+class ModuleSwitchBlocked implements Exception {
+  const ModuleSwitchBlocked();
+}
+
+final moduleSwitcherProvider = Provider<ModuleSwitchController>(ModuleSwitchController.new);
+
+class ModuleSwitchController {
+  ModuleSwitchController(this._ref);
+
+  final Ref _ref;
+
+  Future<void> switchTo(String moduleId) async {
+    if (_ref.read(cartProvider).isNotEmpty) {
+      throw const ModuleSwitchBlocked();
+    }
+
+    final registry = await _ref.read(moduleRegistryProvider.future);
+
+    registry.activate(moduleId);
+
+    await _ref.read(localDatabaseProvider).writeState(SyncStateKeys.activeModule, moduleId);
+
+    _ref.invalidate(moduleRegistryProvider);
+  }
+}
