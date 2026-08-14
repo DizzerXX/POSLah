@@ -19,10 +19,16 @@ export interface Account {
   enabled_modules: string[];
 }
 
+export interface StoreSummary {
+  id: string;
+  name: string;
+}
+
 export interface LoginResponse {
   token: string;
   user: AuthenticatedUser;
   account: Account;
+  stores: StoreSummary[];
 }
 
 export interface ContributingOrder {

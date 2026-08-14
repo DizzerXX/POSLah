@@ -13,12 +13,14 @@ import {
   LoginResponse,
   Recipe,
   StockException,
+  StoreSummary,
   Variant,
 } from './models';
 
 const TOKEN_KEY = 'poslah.token';
 const USER_KEY = 'poslah.user';
 const ACCOUNT_KEY = 'poslah.account';
+const STORES_KEY = 'poslah.stores';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -29,6 +31,12 @@ export class ApiService {
 
   readonly user = signal<AuthenticatedUser | null>(readStored(USER_KEY));
   readonly account = signal<Account | null>(readStored(ACCOUNT_KEY));
+  readonly stores = signal<StoreSummary[]>(readStored(STORES_KEY) ?? []);
+
+  /// v1 is single-store per account; the KDS watches that one.
+  get primaryStoreId(): string | null {
+    return this.stores()[0]?.id ?? null;
+  }
 
   get token(): string | null {
     return localStorage.getItem(TOKEN_KEY);
@@ -46,6 +54,8 @@ export class ApiService {
           localStorage.setItem(TOKEN_KEY, response.token);
           localStorage.setItem(USER_KEY, JSON.stringify(response.user));
           localStorage.setItem(ACCOUNT_KEY, JSON.stringify(response.account));
+          localStorage.setItem(STORES_KEY, JSON.stringify(response.stores));
+          this.stores.set(response.stores);
           this.user.set(response.user);
           this.account.set(response.account);
         }),
@@ -56,8 +66,10 @@ export class ApiService {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(ACCOUNT_KEY);
+    localStorage.removeItem(STORES_KEY);
     this.user.set(null);
     this.account.set(null);
+    this.stores.set([]);
   }
 
   /** Reads straight off the signed-in account. Rendering only — the server authorises. */

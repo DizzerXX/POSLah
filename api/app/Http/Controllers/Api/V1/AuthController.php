@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Store;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -54,6 +55,15 @@ class AuthController extends Controller
                 // request; this copy is stale the moment an admin changes it.
                 'enabled_modules' => $account->enabled_modules,
             ],
+            // v1 is single-store per account, but this is a list rather than a field so that
+            // multi-store stays additive — the same reason the schema carries store_id
+            // everywhere it does.
+            'stores' => Store::query()
+                ->where('account_id', $account->id)
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn ($store) => ['id' => $store->id, 'name' => $store->name])
+                ->all(),
         ]);
     }
 

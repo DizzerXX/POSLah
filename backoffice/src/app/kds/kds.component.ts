@@ -2,6 +2,7 @@ import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
 
 import { ApiService } from '../core/api.service';
 import { KitchenTicket } from '../core/models';
+import { KitchenSocket } from './kitchen-socket';
 import { elapsedMinutes, reconcile } from './ticket-reconciler';
 
 /**
@@ -108,6 +109,7 @@ export class KdsComponent implements OnDestroy {
   static readonly pollIntervalMs = 30_000;
 
   private timer?: ReturnType<typeof setInterval>;
+  private socket?: KitchenSocket;
 
   readonly lastCheckedLabel = computed(() => {
     const at = this.lastChecked();
@@ -117,12 +119,42 @@ export class KdsComponent implements OnDestroy {
 
   constructor() {
     this.poll();
+
+    // The poll runs regardless of whether the socket ever connects. It is not a fallback
+    // armed on failure — a code path that only runs when something breaks is one that is
+    // almost never exercised and therefore almost always broken.
     this.timer = setInterval(() => this.poll(), KdsComponent.pollIntervalMs);
+
+    this.connectSocket();
   }
 
   ngOnDestroy(): void {
     if (this.timer) clearInterval(this.timer);
+    this.socket?.disconnect();
   }
+
+  private connectSocket(): void {
+    const token = this.api.token;
+    const storeId = this.api.primaryStoreId;
+
+    if (token === null || storeId === null) return;
+
+    this.socket = new KitchenSocket(token, storeId);
+
+    this.socket.connect({
+      // Refetch rather than applying the payload: the server derives order status from its
+      // lines, and reimplementing that here would be a second source of truth.
+      onChange: () => this.poll(),
+      onConnectionChange: (connected) => {
+        if (connected) {
+          // Discard and refetch on reconnect rather than replaying what was missed.
+          this.poll();
+        }
+      },
+    });
+  }
+
+
 
   /**
    * The safety net firing. Anything the server reports that this screen does not have is
