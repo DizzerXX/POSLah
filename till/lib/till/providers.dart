@@ -21,12 +21,25 @@ final localDatabaseProvider = Provider<LocalDatabase>((ref) {
 
 final outboxProvider = Provider<Outbox>((ref) => Outbox(ref.watch(localDatabaseProvider)));
 
+final recipeRepositoryProvider =
+    Provider<RecipeRepository>((ref) => RecipeRepository(ref.watch(localDatabaseProvider)));
+
 final catalogRepositoryProvider =
     Provider<CatalogRepository>((ref) => CatalogRepository(ref.watch(localDatabaseProvider)));
 
-final checkoutServiceProvider = Provider<CheckoutService>(
-  (ref) => CheckoutService(ref.watch(localDatabaseProvider), ref.watch(outboxProvider)),
-);
+/// Checkout, built with the active vertical's stock strategy.
+///
+/// Retail expands a line to one movement; F&B expands it to one per recipe ingredient. The
+/// checkout path itself knows neither — it asks the strategy and writes what comes back.
+final checkoutServiceProvider = FutureProvider<CheckoutService>((ref) async {
+  final registry = await ref.watch(moduleRegistryProvider.future);
+
+  return CheckoutService(
+    ref.watch(localDatabaseProvider),
+    ref.watch(outboxProvider),
+    stockStrategy: registry.current!.stockStrategy,
+  );
+});
 
 final reversalServiceProvider = Provider<ReversalService>(
   (ref) => ReversalService(ref.watch(localDatabaseProvider), ref.watch(outboxProvider)),
@@ -130,7 +143,7 @@ final moduleRegistryProvider = FutureProvider<ModuleRegistry>((ref) async {
 
   final available = <String, PosModule>{
     'retail': RetailModule(ref.watch(catalogRepositoryProvider), session?.storeId ?? ''),
-    'fnb': const FnbModule(),
+    'fnb': FnbModule(ref.watch(recipeRepositoryProvider), session?.storeId ?? ''),
   };
 
   return ModuleRegistry.build(

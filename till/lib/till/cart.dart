@@ -1,5 +1,36 @@
 import 'package:flutter/foundation.dart';
 
+/// One ingredient a line consumes, captured when the line was added.
+@immutable
+class RecipeComponent {
+  const RecipeComponent({required this.ingredientId, required this.quantityMilli});
+
+  final String ingredientId;
+
+  /// Per one unit of the product, in milli-units.
+  final int quantityMilli;
+}
+
+/// A modifier applied to a line, snapshotted like everything else on it.
+@immutable
+class CartModifier {
+  const CartModifier({
+    required this.modifierId,
+    required this.nameSnapshot,
+    required this.priceDeltaSnapshot,
+    this.consumesIngredientId,
+    this.consumesQuantityMilli,
+  });
+
+  final String modifierId;
+  final String nameSnapshot;
+  final int priceDeltaSnapshot;
+
+  /// "Extra shot" decrements beans on top of the base recipe.
+  final String? consumesIngredientId;
+  final int? consumesQuantityMilli;
+}
+
 /// One line in the cart.
 ///
 /// Everything on it that came from the catalog is a **snapshot taken at add-to-cart**, not a
@@ -16,6 +47,9 @@ class CartLine {
     required this.quantity,
     this.variantId,
     this.fulfillmentType = 'direct',
+    this.tracksStock = true,
+    this.recipe = const [],
+    this.modifiers = const [],
   });
 
   /// Local uuid, for keyed list updates. Distinct from the product: the same product added
@@ -29,12 +63,29 @@ class CartLine {
   final int priceSnapshot;
   final int quantity;
 
-  /// 'direct' for every v1 retail line. Carried rather than assumed so the F&B work in
-  /// step 5 has nowhere new to put it.
   final String fulfillmentType;
 
-  /// Derived, never stored.
-  int get lineTotal => priceSnapshot * quantity;
+  /// Whether this product holds stock of its own. Three real cases: a retail SKU tracks its
+  /// variant; an F&B menu item tracks nothing itself and decrements its recipe; a corkage
+  /// fee touches inventory not at all. One boolean cannot express the third, which is why
+  /// this and [recipe] are separate.
+  final bool tracksStock;
+
+  /// The bill of materials **as it stood when this line was added**.
+  ///
+  /// Snapshotted for the same reason the price is: if a pull-sync lands mid-transaction and
+  /// changes the burger recipe, this burger still decrements the ingredients it was actually
+  /// made from. Re-reading the recipe at checkout would apply the new one to a sale already
+  /// in progress.
+  final List<RecipeComponent> recipe;
+
+  final List<CartModifier> modifiers;
+
+  /// Derived, never stored. Modifiers price into the line rather than sitting beside it.
+  int get unitPrice =>
+      priceSnapshot + modifiers.fold(0, (sum, m) => sum + m.priceDeltaSnapshot);
+
+  int get lineTotal => unitPrice * quantity;
 
   CartLine copyWith({int? quantity}) {
     return CartLine(
@@ -45,6 +96,9 @@ class CartLine {
       priceSnapshot: priceSnapshot,
       quantity: quantity ?? this.quantity,
       fulfillmentType: fulfillmentType,
+      tracksStock: tracksStock,
+      recipe: recipe,
+      modifiers: modifiers,
     );
   }
 }

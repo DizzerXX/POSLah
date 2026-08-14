@@ -89,3 +89,25 @@ export interface Variant {
   barcode: string | null;
   is_active: boolean;
 }
+
+export interface RecipeLine {
+  id: string;
+  product_id: string;
+  ingredient_id: string;
+  /** Decimal string in the ingredient's own unit. No unit conversion exists in v1. */
+  quantity: string;
+  ingredient_name: string;
+  unit: string;
+  cost_per_unit: number | null;
+}
+
+/** A menu item and its bill of materials. Flat: one level, no sub-recipes. */
+export interface Recipe {
+  id: string;
+  name: string;
+  price: MinorUnits;
+  is_active: boolean;
+  lines: RecipeLine[];
+  /** Naive and indicative. Real COGS is out of scope for v1. */
+  indicative_cost: MinorUnits;
+}

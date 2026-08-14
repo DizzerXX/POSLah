@@ -8,6 +8,7 @@ import {
   Customer,
   Ingredient,
   LoginResponse,
+  Recipe,
   StockException,
   Variant,
 } from './models';
@@ -72,6 +73,14 @@ export class ApiService {
 
   productVariants() {
     return this.http.get<{ data: Variant[] }>(`${this.baseUrl}/api/v1/product-variants`);
+  }
+
+  recipes() {
+    return this.http.get<{ data: Recipe[] }>(`${this.baseUrl}/api/v1/recipes`);
+  }
+
+  saveRecipe(productId: string, lines: { ingredient_id: string; quantity: string }[]) {
+    return this.http.put<{ data: Recipe[] }>(`${this.baseUrl}/api/v1/recipes/${productId}`, { lines });
   }
 
   updateModules(modules: string[]) {

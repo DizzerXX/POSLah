@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:poslah_till/data/local_database.dart';
 import 'package:poslah_till/sync/outbox.dart';
+import 'package:poslah_till/modules/retail_module.dart';
 import 'package:poslah_till/till/cart.dart';
+import 'package:poslah_till/till/catalog_repository.dart';
 import 'package:poslah_till/till/checkout_service.dart';
 import 'package:poslah_till/till/reversal_service.dart';
 import 'package:poslah_till/till/till_session.dart';
@@ -37,7 +39,9 @@ void main() {
   setUp(() async {
     db = LocalDatabase.memory();
     outbox = Outbox(db);
-    checkout = CheckoutService(db, outbox, clock: () => DateTime.utc(2026, 8, 13, 10));
+    checkout = CheckoutService(db, outbox,
+        stockStrategy: RetailStockStrategy(CatalogRepository(db), storeId),
+        clock: () => DateTime.utc(2026, 8, 13, 10));
     reversals = ReversalService(db, outbox, clock: () => DateTime.utc(2026, 8, 13, 11));
 
     catalog = await seedCatalog(db);

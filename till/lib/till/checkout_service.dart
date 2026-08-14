@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../data/local_database.dart';
+import '../modules/pos_module.dart';
 import '../money.dart';
 import '../sync/outbox.dart';
 import 'cart.dart';
@@ -62,12 +63,26 @@ class CheckoutResult {
 /// order with no stock movement — so everything lands together or nothing does. A failure is
 /// local, immediate and honest: the sale did not happen and the cashier is told.
 class CheckoutService {
-  CheckoutService(this._db, this._outbox, {Uuid? uuid, DateTime Function()? clock})
-      : _uuid = uuid ?? const Uuid(),
+  CheckoutService(
+    this._db,
+    this._outbox, {
+    required StockStrategy stockStrategy,
+    Uuid? uuid,
+    DateTime Function()? clock,
+  })  : _stock = stockStrategy,
+        _uuid = uuid ?? const Uuid(),
         _clock = clock ?? (() => DateTime.now().toUtc());
 
   final LocalDatabase _db;
   final Outbox _outbox;
+
+  /// How the active vertical turns a sold line into stock movements.
+  ///
+  /// This used to be a hardcoded "one variant, one movement" loop, which was correct for
+  /// retail and simply wrong for F&B — a burger is one product and several stockables. The
+  /// interface was always going to need this; it is the revision step 4 predicted, and it is
+  /// cheap now precisely because it was made while there was one real implementor.
+  final StockStrategy _stock;
   final Uuid _uuid;
   final DateTime Function() _clock;
 
@@ -129,6 +144,18 @@ class CheckoutService {
         final lineId = _uuid.v7();
         lineIds[line.lineId] = lineId;
 
+        for (final modifier in line.modifiers) {
+          await _db.into(_db.orderLineModifiers).insert(
+                OrderLineModifiersCompanion.insert(
+                  id: _uuid.v7(),
+                  orderLineId: lineId,
+                  modifierId: Value(modifier.modifierId),
+                  nameSnapshot: modifier.nameSnapshot,
+                  priceDeltaSnapshot: modifier.priceDeltaSnapshot,
+                ),
+              );
+        }
+
         await _db.into(_db.orderLines).insert(
               OrderLinesCompanion.insert(
                 id: lineId,
@@ -173,7 +200,7 @@ class CheckoutService {
       // Enqueued last, and inside the same transaction: an outbox entry for a sale that
       // rolled back would push a fact that never happened.
       await _enqueue(orderId, orderNumber, cart, session, occurredAt, ledgerId, amountCharged,
-          method, movements);
+          method, movements, lineIds);
 
       return CheckoutResult(
         orderId: orderId,
@@ -201,10 +228,16 @@ class CheckoutService {
     return '${session.numberPrefix}-${current.toString().padLeft(4, '0')}';
   }
 
-  /// One movement per stock-tracking line.
+  /// Expands every line through the active vertical's strategy and writes what it returns.
   ///
-  /// A product with `tracks_stock: false` — a corkage fee, a delivery charge — writes none,
-  /// and that empty result is a legitimate outcome rather than a missing-recipe warning.
+  /// Retail returns one movement per line. F&B returns one per recipe ingredient, plus one
+  /// per consuming modifier. An untracked product returns none — and **an empty list is a
+  /// legitimate outcome**, not a missing-recipe warning.
+  ///
+  /// Movements are deliberately *not* aggregated. Two lattes rung up as separate lines
+  /// produce two -18g bean movements rather than one -36g: they are distinct facts about
+  /// distinct sales, and per-line provenance is what makes reconciliation debuggable months
+  /// later.
   Future<List<Map<String, dynamic>>> _writeStockMovements({
     required CartState cart,
     required TillSession session,
@@ -215,54 +248,58 @@ class CheckoutService {
     final payloads = <Map<String, dynamic>>[];
 
     for (final line in cart.lines) {
-      if (line.variantId == null) continue;
+      for (final planned in _stock.expandLine(line)) {
+        final movementId = _uuid.v7();
 
-      final product = await (_db.select(_db.products)..where((t) => t.id.equals(line.productId)))
-          .getSingleOrNull();
+        await _db.into(_db.stockMovements).insert(
+              StockMovementsCompanion.insert(
+                id: movementId,
+                storeId: session.storeId,
+                stockableType: planned.stockableType,
+                stockableId: planned.stockableId,
+                deltaMilli: planned.deltaMilli,
+                reason: 'sale',
+                sourceOrderId: Value(orderId),
+                sourceOrderLineId: Value(lineIds[line.lineId]),
+                createdByUserId: Value(session.cashierUserId),
+                occurredAt: occurredAt,
+              ),
+            );
 
-      if (product != null && !product.tracksStock) continue;
+        // Advisory only. This number greys a tile; it never decides whether a sale may
+        // happen, and it is stale the moment another till sells the same thing.
+        await _adjustLocalStock(
+          session.storeId,
+          planned.stockableType,
+          planned.stockableId,
+          planned.deltaMilli,
+        );
 
-      final movementId = _uuid.v7();
-      final deltaMilli = -line.quantity * 1000;
-
-      await _db.into(_db.stockMovements).insert(
-            StockMovementsCompanion.insert(
-              id: movementId,
-              storeId: session.storeId,
-              stockableType: 'product_variant',
-              stockableId: line.variantId!,
-              deltaMilli: deltaMilli,
-              reason: 'sale',
-              sourceOrderId: Value(orderId),
-              sourceOrderLineId: Value(lineIds[line.lineId]),
-              createdByUserId: Value(session.cashierUserId),
-              occurredAt: occurredAt,
-            ),
-          );
-
-      // Advisory only. This number greys a tile; it never decides whether a sale may happen,
-      // and it is stale the moment another till sells the same thing.
-      await _adjustLocalStock(session.storeId, line.variantId!, deltaMilli);
-
-      payloads.add({
-        'id': movementId,
-        'store_id': session.storeId,
-        'stockable_type': 'product_variant',
-        'stockable_id': line.variantId,
-        'delta': _milliToDecimal(deltaMilli),
-        'reason': 'sale',
-        'source_order_id': orderId,
-        'source_order_line_id': lineIds[line.lineId],
-        'created_by_user_id': session.cashierUserId,
-        'note': null,
-        'occurred_at': occurredAt.toIso8601String(),
-      });
+        payloads.add({
+          'id': movementId,
+          'store_id': session.storeId,
+          'stockable_type': planned.stockableType,
+          'stockable_id': planned.stockableId,
+          'delta': _milliToDecimal(planned.deltaMilli),
+          'reason': 'sale',
+          'source_order_id': orderId,
+          'source_order_line_id': lineIds[line.lineId],
+          'created_by_user_id': session.cashierUserId,
+          'note': null,
+          'occurred_at': occurredAt.toIso8601String(),
+        });
+      }
     }
 
     return payloads;
   }
 
-  Future<void> _adjustLocalStock(String storeId, String stockableId, int deltaMilli) async {
+  Future<void> _adjustLocalStock(
+    String storeId,
+    String stockableType,
+    String stockableId,
+    int deltaMilli,
+  ) async {
     final existing = await (_db.select(_db.stockLevels)
           ..where((t) => t.storeId.equals(storeId) & t.stockableId.equals(stockableId)))
         .getSingleOrNull();
@@ -272,7 +309,7 @@ class CheckoutService {
             StockLevelsCompanion.insert(
               id: _uuid.v7(),
               storeId: storeId,
-              stockableType: 'product_variant',
+              stockableType: stockableType,
               stockableId: stockableId,
               quantityOnHandMilli: Value(deltaMilli),
             ),
@@ -298,8 +335,16 @@ class CheckoutService {
     int amountCharged,
     PaymentMethod method,
     List<Map<String, dynamic>> movements,
+    Map<String, String> lineIds,
   ) async {
     final lines = await (_db.select(_db.orderLines)..where((t) => t.orderId.equals(orderId))).get();
+
+    // Cart lines keep their own local ids; order lines get fresh ones. This maps between
+    // them so each persisted line carries the modifiers that were actually applied to it.
+    final modifiersByLine = <String, List<CartModifier>>{
+      for (final cartLine in cart.lines)
+        if (lineIds[cartLine.lineId] != null) lineIds[cartLine.lineId]!: cartLine.modifiers,
+    };
 
     await _outbox.enqueue(
       entityType: 'order',
@@ -332,7 +377,15 @@ class CheckoutService {
               'quantity': line.quantity,
               'line_total': line.lineTotal,
               'fulfillment_status': line.fulfillmentStatus,
-              'modifiers': <Map<String, dynamic>>[],
+              'modifiers': [
+                for (final modifier in modifiersByLine[line.id] ?? const <CartModifier>[])
+                  {
+                    'id': _uuid.v7(),
+                    'modifier_id': modifier.modifierId,
+                    'name_snapshot': modifier.nameSnapshot,
+                    'price_delta_snapshot': modifier.priceDeltaSnapshot,
+                  },
+              ],
             },
         ],
       },

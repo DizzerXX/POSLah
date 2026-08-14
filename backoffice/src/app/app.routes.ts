@@ -45,6 +45,11 @@ export const routes: Routes = [
         data: { vertical: 'retail' },
       },
       {
+        path: 'fnb/recipes',
+        canMatch: [moduleGuard('fnb')],
+        loadComponent: () => import('./recipes/recipes.component').then((m) => m.RecipesComponent),
+      },
+      {
         path: 'fnb/ingredients',
         canMatch: [moduleGuard('fnb')],
         loadComponent: () => import('./settings/inventory.component').then((m) => m.InventoryComponent),

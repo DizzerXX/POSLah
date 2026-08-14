@@ -2,7 +2,9 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:poslah_till/data/local_database.dart';
 import 'package:poslah_till/sync/outbox.dart';
+import 'package:poslah_till/modules/retail_module.dart';
 import 'package:poslah_till/till/cart.dart';
+import 'package:poslah_till/till/catalog_repository.dart';
 import 'package:poslah_till/till/checkout_service.dart';
 import 'package:poslah_till/till/receipt_pdf.dart';
 import 'package:poslah_till/till/till_session.dart';
@@ -31,7 +33,8 @@ void main() {
 
   setUp(() async {
     db = LocalDatabase.memory();
-    checkout = CheckoutService(db, Outbox(db));
+    checkout = CheckoutService(db, Outbox(db),
+        stockStrategy: RetailStockStrategy(CatalogRepository(db), storeId));
     catalog = await seedCatalog(db);
   });
 

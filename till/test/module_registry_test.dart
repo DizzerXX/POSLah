@@ -28,7 +28,7 @@ import 'support/till_fixture.dart';
 void main() {
   Map<String, PosModule> available(LocalDatabase db) => {
         'retail': RetailModule(CatalogRepository(db), storeId),
-        'fnb': const FnbModule(),
+        'fnb': FnbModule(RecipeRepository(db), storeId),
       };
 
   group('registry construction', () {

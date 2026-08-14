@@ -157,7 +157,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
     try {
       // One local transaction. No network, not even optimistically.
-      final result = await ref.read(checkoutServiceProvider).checkout(
+      final service = await ref.read(checkoutServiceProvider.future);
+
+      final result = await service.checkout(
             cart: ref.read(cartProvider),
             session: session,
             method: _method,

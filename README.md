@@ -19,8 +19,8 @@ checkout path.
 | 1 | Schema — migrations, models, factories, seeders | ✅ |
 | 2 | Sync engine — outbox, push/pull, reconciliation | ✅ |
 | 3 | Retail till loop (Flutter) | ✅ |
-| 4 | Entitlement / module system | — |
-| 5 | F&B inventory — recipes, BOM expansion | — |
+| 4 | Entitlement / module system | ✅ |
+| 5 | F&B inventory — recipes, BOM expansion | ✅ |
 | 6 | KDS — Reverb, kitchen screen, polling reconciliation | — |
 
 ## Layout
@@ -116,6 +116,14 @@ merchant, and no sale is refused.
 | Receipt renders from snapshots after the product is renamed and discontinued | `till` · `receipt_pdf_test` |
 | A stolen token cannot write into another account | `api` · `SyncAuthorizationTest` |
 | Full loop over real HTTP against real PostgreSQL | `till` · `sync_live_test` |
+| Burger writes one movement per recipe ingredient, correct quantities | `till` · `fnb_inventory_test` |
+| Extra cheese writes the base recipe **plus** the modifier's ingredient | `till` · `fnb_inventory_test` |
+| Two lattes on separate lines write two movements, not one merged | `till` · `fnb_inventory_test` |
+| Recipe changed after add-to-cart does not alter the sale | `till` · `fnb_inventory_test` |
+| Availability hint is a minimum across ingredients and never blocks | `till` · `fnb_inventory_test` |
+| Ingredient goes negative → exception raised, sale stands | `api` · `RecipeTest` |
+| F&B endpoint 403s for a retail-only account (hand-crafted request) | `api` · `ModuleEntitlementTest` |
+| Unentitled module's routes are absent, not guarded | `till` · `module_registry_test` |
 
 ## The five architecture decisions
 

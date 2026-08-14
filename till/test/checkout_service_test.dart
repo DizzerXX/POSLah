@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:poslah_till/data/local_database.dart';
 import 'package:poslah_till/sync/outbox.dart';
+import 'package:poslah_till/modules/retail_module.dart';
 import 'package:poslah_till/till/cart.dart';
+import 'package:poslah_till/till/catalog_repository.dart';
 import 'package:poslah_till/till/checkout_service.dart';
 import 'package:poslah_till/till/till_session.dart';
 import 'package:uuid/uuid.dart';
@@ -38,6 +40,7 @@ void main() {
     checkout = CheckoutService(
       db,
       outbox,
+      stockStrategy: RetailStockStrategy(CatalogRepository(db), storeId),
       clock: () => DateTime.utc(2026, 8, 13, 10, 30),
     );
 
@@ -297,7 +300,8 @@ void main() {
       final offlineDb = LocalDatabase.memory();
       await seedCatalog(offlineDb);
 
-      final offlineCheckout = CheckoutService(offlineDb, Outbox(offlineDb));
+      final offlineCheckout = CheckoutService(offlineDb, Outbox(offlineDb),
+          stockStrategy: RetailStockStrategy(CatalogRepository(offlineDb), storeId));
 
       final result = await offlineCheckout.checkout(
         cart: CartState(lines: [lineFor(catalog.smallBagVariantId)], taxRate: '0.0600'),

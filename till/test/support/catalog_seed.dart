@@ -187,3 +187,157 @@ Future<void> seedStaff(LocalDatabase db) async {
         ),
       );
 }
+
+/// An F&B menu, as a pull-sync would have left it.
+class SeededMenu {
+  const SeededMenu({
+    required this.burgerId,
+    required this.latteId,
+    required this.corkageId,
+    required this.bunId,
+    required this.pattyId,
+    required this.cheeseId,
+    required this.beansId,
+    required this.milkId,
+    required this.extraCheeseModifierId,
+    required this.lessIceModifierId,
+  });
+
+  final String burgerId;
+  final String latteId;
+
+  /// tracks_stock false and no recipe — the third case, which one boolean cannot express.
+  final String corkageId;
+
+  final String bunId;
+  final String pattyId;
+  final String cheeseId;
+  final String beansId;
+  final String milkId;
+
+  /// Consumes one more cheese slice on top of the base recipe.
+  final String extraCheeseModifierId;
+
+  /// Priced, but consumes nothing.
+  final String lessIceModifierId;
+}
+
+Future<SeededMenu> seedMenu(LocalDatabase db) async {
+  final at = DateTime.utc(2026, 8, 14, 7);
+
+  Future<void> ingredient(String id, String name, String unit) {
+    return db.into(db.ingredients).insert(
+          IngredientsCompanion.insert(
+            id: id,
+            accountId: accountId,
+            name: name,
+            unit: unit,
+            updatedAt: at,
+          ),
+        );
+  }
+
+  Future<void> menuItem(String id, String name, int price) {
+    return db.into(db.products).insert(
+          ProductsCompanion.insert(
+            id: id,
+            accountId: accountId,
+            name: name,
+            price: price,
+            fulfillmentType: 'routed',
+            // The menu item holds no stock of its own; its recipe does.
+            tracksStock: const Value(false),
+            updatedAt: at,
+          ),
+        );
+  }
+
+  Future<void> recipeLine(String id, String productId, String ingredientId, int milli) {
+    return db.into(db.recipeLines).insert(
+          RecipeLinesCompanion.insert(
+            id: id,
+            productId: productId,
+            ingredientId: ingredientId,
+            quantityMilli: milli,
+            updatedAt: at,
+          ),
+        );
+  }
+
+  await ingredient('i-bun', 'Burger Bun', 'unit');
+  await ingredient('i-patty', 'Beef Patty', 'g');
+  await ingredient('i-cheese', 'Cheese Slice', 'unit');
+  await ingredient('i-beans', 'House Espresso Blend', 'g');
+  await ingredient('i-milk', 'Fresh Milk', 'ml');
+
+  await menuItem('p-burger', 'Cheeseburger', 2200);
+  await menuItem('p-latte', 'Latte', 1300);
+
+  // One burger is three rows: bun x1, patty x150g, cheese x2.
+  await recipeLine('r-burger-bun', 'p-burger', 'i-bun', 1000);
+  await recipeLine('r-burger-patty', 'p-burger', 'i-patty', 150000);
+  await recipeLine('r-burger-cheese', 'p-burger', 'i-cheese', 2000);
+
+  await recipeLine('r-latte-beans', 'p-latte', 'i-beans', 18000);
+  await recipeLine('r-latte-milk', 'p-latte', 'i-milk', 220000);
+
+  await db.into(db.products).insert(
+        ProductsCompanion.insert(
+          id: 'p-corkage-fnb',
+          accountId: accountId,
+          name: 'Corkage',
+          price: 3000,
+          fulfillmentType: 'direct',
+          tracksStock: const Value(false),
+          updatedAt: at,
+        ),
+      );
+
+  await db.into(db.modifiers).insert(
+        ModifiersCompanion.insert(
+          id: 'm-extra-cheese',
+          productId: 'p-burger',
+          name: 'Extra Cheese',
+          priceDelta: const Value(300),
+          consumesIngredientId: const Value('i-cheese'),
+          consumesQuantityMilli: const Value(1000),
+          updatedAt: at,
+        ),
+      );
+
+  await db.into(db.modifiers).insert(
+        ModifiersCompanion.insert(
+          id: 'm-less-ice',
+          productId: 'p-latte',
+          name: 'Less Ice',
+          priceDelta: const Value(0),
+          updatedAt: at,
+        ),
+      );
+
+  return const SeededMenu(
+    burgerId: 'p-burger',
+    latteId: 'p-latte',
+    corkageId: 'p-corkage-fnb',
+    bunId: 'i-bun',
+    pattyId: 'i-patty',
+    cheeseId: 'i-cheese',
+    beansId: 'i-beans',
+    milkId: 'i-milk',
+    extraCheeseModifierId: 'm-extra-cheese',
+    lessIceModifierId: 'm-less-ice',
+  );
+}
+
+/// Opening stock for an ingredient, in whole units of its own unit.
+Future<void> seedIngredientStock(LocalDatabase db, String ingredientId, int quantity) {
+  return db.into(db.stockLevels).insert(
+        StockLevelsCompanion.insert(
+          id: 'lvl-$ingredientId',
+          storeId: storeId,
+          stockableType: 'ingredient',
+          stockableId: ingredientId,
+          quantityOnHandMilli: Value(quantity * 1000),
+        ),
+      );
+}

@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\Backoffice\AccountModuleController;
 use App\Http\Controllers\Api\V1\Backoffice\CatalogController;
 use App\Http\Controllers\Api\V1\Backoffice\CustomerController;
+use App\Http\Controllers\Api\V1\Backoffice\RecipeController;
 use App\Http\Controllers\Api\V1\Backoffice\StockExceptionController;
 use App\Http\Controllers\Api\V1\SyncPullController;
 use App\Http\Controllers\Api\V1\SyncPushController;
@@ -53,6 +54,8 @@ Route::prefix('v1')->group(function () {
         // expiry.
         Route::middleware('module:fnb')->group(function () {
             Route::get('ingredients', [CatalogController::class, 'ingredients'])->name('ingredients.index');
+            Route::get('recipes', [RecipeController::class, 'index'])->name('recipes.index');
+            Route::put('recipes/{product}', [RecipeController::class, 'update'])->name('recipes.update');
         });
 
         Route::middleware('module:retail')->group(function () {
