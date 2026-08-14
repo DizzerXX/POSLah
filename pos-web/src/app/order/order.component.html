@@ -1,0 +1,196 @@
+<div class="counter">
+  <!-- Left rail: what the kitchen is already working on. -->
+  <aside class="rail">
+    <header>
+      <img src="logo.png" alt="POSlah" width="28" height="28" />
+      <span>Orders <em>({{ activeOrders().length }})</em></span>
+    </header>
+
+    @if (activeOrders().length === 0) {
+      <p class="muted">Nothing on the pass.</p>
+    }
+
+    @for (order of activeOrders(); track order.id) {
+      <article class="ticket">
+        <div class="ticket-top">
+          <strong>{{ order.order_number }}</strong>
+          <span class="pos-pill" [class]="lineStatusClass(order)">{{ lineStatusLabel(order) }}</span>
+        </div>
+        <div class="muted small">
+          {{ order.lines.length }} items
+          @if (order.table) { · Table {{ order.table }} }
+          @if (order.service_type === 'takeaway') { · Takeaway }
+        </div>
+        <ul>
+          @for (line of order.lines; track line.id) {
+            <li>{{ line.quantity }}× {{ line.name }}</li>
+          }
+        </ul>
+      </article>
+    }
+  </aside>
+
+  <!-- Middle: the menu. -->
+  <main class="menu">
+    <div class="menu-head">
+      <input
+        type="search"
+        placeholder="Search the menu"
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)"
+        data-testid="menu-search"
+      />
+      <span class="cashier">{{ api.cashierName() }}</span>
+    </div>
+
+    <div class="chips">
+      <button class="chip" [class.on]="selectedCategory() === null" (click)="selectedCategory.set(null)">
+        All Menu
+      </button>
+      @for (category of categories(); track category.id) {
+        <button
+          class="chip"
+          [class.on]="selectedCategory() === category.id"
+          (click)="selectedCategory.set(category.id)"
+        >
+          {{ category.name }}
+        </button>
+      }
+    </div>
+
+    <div class="grid">
+      @for (product of visibleProducts(); track product.id) {
+        <button class="tile" (click)="tap(product)" [attr.data-testid]="'product-' + product.id">
+          <!-- Most catalogs have no photography. A typographic tile beats a broken image. -->
+          @if (product.image_url) {
+            <img [src]="product.image_url" [alt]="product.name" />
+          } @else {
+            <span class="tile-initials">{{ initials(product.name) }}</span>
+          }
+          <span class="tile-name">{{ product.name }}</span>
+          <span class="tile-price">{{ formatMoney(product.price) }}</span>
+        </button>
+      }
+      @if (visibleProducts().length === 0) {
+        <p class="muted">Nothing matches.</p>
+      }
+    </div>
+  </main>
+
+  <!-- Right: the order being built. -->
+  <section class="order">
+    @if (stage() === 'success') {
+      <div class="outcome" data-testid="payment-success">
+        <div class="mark ok">✓</div>
+        <h2>Payment Success</h2>
+        <p class="muted">Order {{ placed()?.order_number }} is with the kitchen.</p>
+        <button class="pos-btn" (click)="clear()">New order</button>
+      </div>
+    } @else if (stage() === 'failed') {
+      <div class="outcome" data-testid="payment-failed">
+        <div class="mark bad">✕</div>
+        <h2>Payment Failed</h2>
+        <!-- This till is online-only, so a dropped connection is a failed sale rather than
+             a queued one. The cashier is told the truth. -->
+        <p class="muted">{{ error() }}</p>
+        <button class="pos-btn" (click)="stage.set('ordering')">Try again</button>
+      </div>
+    } @else {
+      <div class="order-head">
+        <div class="segment">
+          <button [class.on]="serviceType() === 'dine_in'" (click)="serviceType.set('dine_in')">Dine in</button>
+          <button [class.on]="serviceType() === 'takeaway'" (click)="serviceType.set('takeaway')">Takeaway</button>
+        </div>
+
+        @if (serviceType() === 'dine_in') {
+          <select [ngModel]="tableId()" (ngModelChange)="tableId.set($event)" data-testid="table-select">
+            <option [ngValue]="null">No table</option>
+            @for (table of availableTables(); track table.id) {
+              <option [ngValue]="table.id">Table {{ table.label }} · {{ table.seats }} seats</option>
+            }
+          </select>
+        }
+      </div>
+
+      <div class="lines">
+        @if (draft().length === 0) {
+          <p class="muted">Tap something on the menu.</p>
+        }
+        @for (line of draft(); track line.key) {
+          <div class="line">
+            <div class="line-main">
+              <strong>{{ line.product.name }}</strong>
+              @if (line.modifiers.length) {
+                <span class="muted small">{{ line.modifiers.length }} extras</span>
+              }
+              <span class="muted small">{{ formatMoney(unitPrice(line)) }}</span>
+            </div>
+            <div class="stepper">
+              <button (click)="setQuantity(line.key, line.quantity - 1)">−</button>
+              <span>{{ line.quantity }}</span>
+              <button (click)="setQuantity(line.key, line.quantity + 1)">+</button>
+            </div>
+            <span class="line-total">{{ formatMoney(lineTotal(line)) }}</span>
+          </div>
+        }
+      </div>
+
+      <label class="note">
+        Customer notes
+        <textarea rows="2" [ngModel]="note()" (ngModelChange)="note.set($event)" placeholder="Ask for extra cutlery…"></textarea>
+      </label>
+
+      <div class="totals">
+        <div><span>Sub Total</span><span>{{ formatMoney(subtotal()) }}</span></div>
+        <div><span>Tax (6%)</span><span>{{ formatMoney(tax()) }}</span></div>
+        <div class="grand"><span>Total</span><span data-testid="order-total">{{ formatMoney(total()) }}</span></div>
+      </div>
+
+      <div class="methods">
+        @for (method of ['cash', 'card', 'qr']; track method) {
+          <button class="method" [class.on]="paymentMethod() === method" (click)="paymentMethod.set(method)">
+            {{ method | uppercase }}
+          </button>
+        }
+      </div>
+
+      @if (paymentMethod() === 'cash') {
+        <div class="cash">
+          <label>
+            Amount paid
+            <input type="text" inputmode="decimal" [ngModel]="tenderedInput()" (ngModelChange)="tenderedInput.set($event)" data-testid="tendered" />
+          </label>
+          <div class="change"><span>Change</span><span data-testid="change">{{ formatMoney(change()) }}</span></div>
+        </div>
+      }
+
+      <button class="pos-btn place" [disabled]="!canPay()" (click)="pay()" data-testid="place-order">
+        {{ busy() ? 'Placing…' : 'Place Order' }}
+      </button>
+    }
+  </section>
+</div>
+
+<!-- Modifier sheet. -->
+@if (configuring(); as product) {
+  <div class="sheet-backdrop" (click)="configuring.set(null)">
+    <div class="sheet" (click)="$event.stopPropagation()">
+      <h3>{{ product.name }}</h3>
+      @for (modifier of product.modifiers; track modifier.id) {
+        <label class="modifier">
+          <input
+            type="checkbox"
+            [checked]="chosenModifiers().has(modifier.id)"
+            (change)="toggleModifier(modifier.id)"
+            [attr.data-testid]="'modifier-' + modifier.id"
+          />
+          <span>{{ modifier.name }}</span>
+          @if (modifier.price_delta) {
+            <span class="muted">+{{ formatMoney(modifier.price_delta) }}</span>
+          }
+        </label>
+      }
+      <button class="pos-btn" (click)="confirmModifiers()" data-testid="confirm-modifiers">Add to order</button>
+    </div>
+  </div>
+}

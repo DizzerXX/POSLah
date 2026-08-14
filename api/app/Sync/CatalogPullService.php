@@ -76,7 +76,7 @@ class CatalogPullService
                 ),
                 'products' => $this->delta('products', $since, $serverTime,
                     fn ($q) => $q->where('account_id', $device->account_id)
-                        ->select('id', 'account_id', 'category_id', 'name', 'sku', 'barcode',
+                        ->select('id', 'account_id', 'category_id', 'name', 'sku', 'barcode', 'image_url',
                             'price', 'fulfillment_type', 'tracks_stock', 'is_active', 'updated_at'),
                 ),
                 'product_variants' => $this->delta('product_variants', $since, $serverTime,

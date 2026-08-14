@@ -50,7 +50,7 @@ class PosController extends Controller
             ->where('account_id', $accountId)
             ->where('is_active', true)
             ->orderBy('name')
-            ->get(['id', 'category_id', 'name', 'price', 'fulfillment_type', 'tracks_stock']);
+            ->get(['id', 'category_id', 'name', 'price', 'image_url', 'fulfillment_type', 'tracks_stock']);
 
         $categories = DB::table('categories')
             ->where('account_id', $accountId)

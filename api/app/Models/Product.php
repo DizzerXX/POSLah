@@ -26,7 +26,7 @@ class Product extends Model
     use HasUuidV7Key;
 
     protected $fillable = [
-        'id', 'account_id', 'category_id', 'name', 'sku', 'barcode', 'price',
+        'id', 'account_id', 'category_id', 'name', 'sku', 'barcode', 'image_url', 'price',
         'fulfillment_type', 'tracks_stock', 'is_active',
     ];
 

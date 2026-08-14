@@ -1,0 +1,79 @@
+/**
+ * The till's design language.
+ *
+ * Orange, dense, and high-contrast — a counter UI is read at arm's length in a hurry, which
+ * is the opposite of the backoffice's job. The two apps deliberately do not share a theme.
+ *
+ * Everything is a token so a repaint is one file rather than a search across components.
+ */
+:root {
+  --pos-accent: #f4511e;
+  --pos-accent-strong: #e03e0c;
+  --pos-accent-soft: #fff1ec;
+  --pos-ink: #1f2430;
+  --pos-muted: #7a8194;
+  --pos-line: #e8eaef;
+  --pos-surface: #ffffff;
+  --pos-canvas: #f6f7f9;
+
+  --pos-ok: #16a34a;
+  --pos-warn: #d97706;
+  --pos-danger: #dc2626;
+
+  --pos-radius: 12px;
+  --pos-shadow: 0 1px 2px rgb(16 24 40 / 6%), 0 1px 3px rgb(16 24 40 / 10%);
+
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--pos-canvas);
+  color: var(--pos-ink);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font: inherit; cursor: pointer; }
+
+.pos-btn {
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--pos-accent);
+  color: #fff;
+  font-weight: 700;
+}
+.pos-btn:hover { background: var(--pos-accent-strong); }
+.pos-btn:disabled { opacity: 0.45; cursor: default; }
+
+.pos-btn-ghost {
+  padding: 10px 14px;
+  border: 1px solid var(--pos-line);
+  border-radius: 10px;
+  background: var(--pos-surface);
+  color: var(--pos-ink);
+  font-weight: 600;
+}
+
+.pos-card {
+  background: var(--pos-surface);
+  border: 1px solid var(--pos-line);
+  border-radius: var(--pos-radius);
+}
+
+.pos-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.pos-pill--cooking { background: #fff4e5; color: #b45309; }
+.pos-pill--ready { background: #e8f7ee; color: #15803d; }
+.pos-pill--done { background: #eef1f6; color: #5b6478; }
