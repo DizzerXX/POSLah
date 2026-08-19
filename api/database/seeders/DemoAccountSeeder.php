@@ -13,6 +13,7 @@ use App\Models\Modifier;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\RecipeLine;
+use App\Models\RestaurantTable;
 use App\Models\StockLevel;
 use App\Models\StockMovement;
 use App\Models\Store;
@@ -49,6 +50,7 @@ class DemoAccountSeeder extends Seeder
         $this->seedDevices($account, $store);
         $this->seedRetailCatalog($account, $store);
         $this->seedFnbCatalog($account, $store);
+        $this->seedTables($account, $store);
     }
 
     private function seedStaff(Account $account): void
@@ -281,6 +283,22 @@ class DemoAccountSeeder extends Seeder
             'sku' => null,
             'price' => 3000,
         ]);
+    }
+
+    /**
+     * A small floor plan, so the web till has somewhere to seat people.
+     *
+     * There is no status column to seed: a table is occupied when an unfinished order
+     * references it, and free otherwise.
+     */
+    private function seedTables(Account $account, Store $store): void
+    {
+        foreach ([['T01', 2], ['T02', 4], ['T03', 4], ['T04', 6], ['T05', 2], ['T06', 4]] as [$label, $seats]) {
+            RestaurantTable::factory()->for($account)->for($store)->create([
+                'label' => $label,
+                'seats' => $seats,
+            ]);
+        }
     }
 
     /**

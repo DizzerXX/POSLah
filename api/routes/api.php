@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Backoffice\CatalogController;
 use App\Http\Controllers\Api\V1\Backoffice\CustomerController;
 use App\Http\Controllers\Api\V1\Backoffice\DeviceController;
 use App\Http\Controllers\Api\V1\Backoffice\RecipeController;
+use App\Http\Controllers\Api\V1\Backoffice\SettingsController;
 use App\Http\Controllers\Api\V1\Backoffice\StockExceptionController;
 use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\Pos\PosController;
@@ -52,6 +53,9 @@ Route::prefix('v1')->group(function () {
         Route::get('devices', [DeviceController::class, 'index'])->name('devices.index');
         Route::post('devices', [DeviceController::class, 'store'])->name('devices.store');
         Route::patch('devices/{device}', [DeviceController::class, 'update'])->name('devices.update');
+
+        Route::get('settings', [SettingsController::class, 'show'])->name('settings.show');
+        Route::patch('settings', [SettingsController::class, 'update'])->name('settings.update');
 
         Route::get('account/modules', [AccountModuleController::class, 'show'])->name('account.modules.show');
         Route::patch('account/modules', [AccountModuleController::class, 'update'])->name('account.modules.update');

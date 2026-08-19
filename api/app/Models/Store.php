@@ -16,7 +16,7 @@ class Store extends Model
 
     use HasUuidV7Key;
 
-    protected $fillable = ['id', 'account_id', 'name', 'address', 'tax_rate'];
+    protected $fillable = ['id', 'account_id', 'name', 'address', 'email', 'phone', 'tax_rate'];
 
     protected function casts(): array
     {

@@ -138,3 +138,22 @@ export interface KitchenTicket {
   placed_at: string | null;
   lines: KitchenLine[];
 }
+
+export interface PosSettings {
+  account: { id: string; name: string; timezone: string; currency: string };
+  store: {
+    id: string;
+    name: string;
+    address: string | null;
+    email: string | null;
+    phone: string | null;
+    /** Fraction, not percent: "0.0600" is 6%. */
+    tax_rate: string;
+  };
+  /** What changing a setting would actually affect, reported by the server. */
+  impact: {
+    currency: { orders: number; takings: MinorUnits; note: string | null };
+    timezone: { orders: number; note: string };
+  };
+  can_edit: boolean;
+}

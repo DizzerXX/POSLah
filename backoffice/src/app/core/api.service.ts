@@ -11,6 +11,7 @@ import {
   Ingredient,
   KitchenTicket,
   LoginResponse,
+  PosSettings,
   Recipe,
   StockException,
   StoreSummary,
@@ -110,6 +111,14 @@ export class ApiService {
       `${this.baseUrl}/api/v1/kitchen/lines/${lineId}`,
       { status },
     );
+  }
+
+  settings() {
+    return this.http.get<{ data: PosSettings }>(`${this.baseUrl}/api/v1/settings`);
+  }
+
+  saveSettings(changes: Record<string, string | null>) {
+    return this.http.patch<{ data: PosSettings }>(`${this.baseUrl}/api/v1/settings`, changes);
   }
 
   updateModules(modules: string[]) {

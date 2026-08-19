@@ -43,6 +43,7 @@ import { ApiService } from '../core/api.service';
         }
 
         <span class="group">Account</span>
+        <a routerLink="/settings/general" routerLinkActive="on" data-testid="nav-settings">Settings</a>
         <a routerLink="/settings/modules" routerLinkActive="on">Modules</a>
       </nav>
 

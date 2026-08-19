@@ -50,6 +50,20 @@ and an F&B menu with ingredients and recipes — so the divergence the architect
 is present from the first `artisan` run. It also produces two single-vertical accounts, which are
 what the entitlement tests in step 4 will need.
 
+The two web apps:
+
+```bash
+cd backoffice && npm install && npm start   # http://127.0.0.1:4300
+cd pos-web    && npm install && npm start   # http://127.0.0.1:4400
+```
+
+Both expect the API on **port 8123** — `cd api && php artisan serve --port=8123`. That port
+is in each app's `src/environments/environment.development.ts`; change it there, not in a
+component.
+
+Sign in to either with `manager@poslah.test` / `password`. The seed includes six tables and
+opening ingredient stock, so the POS can take a real order immediately.
+
 The till:
 
 ```bash
