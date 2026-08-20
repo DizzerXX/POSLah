@@ -215,6 +215,21 @@ current.
 holds valid credentials and is still refused `private-store.{id}.kitchen` — otherwise the
 kitchen would be readable by listening while the API refused.
 
+### Seeing the kitchen display update live
+
+The socket is an optimisation, so the KDS works without any of this — it just polls. To see
+the fast path:
+
+```bash
+cd api
+php artisan reverb:start --port=8080   # the websocket server
+php artisan queue:work                 # broadcasts are queued; without this they never send
+```
+
+Both are required together. `ShouldBroadcast` queues the event, so a running Reverb with no
+worker looks exactly like a working socket that has nothing to say — which is precisely the
+failure the 30-second poll exists to cover.
+
 ## Continuous integration
 
 `.github/workflows/ci.yml` runs all three suites on every push: the API against a real
