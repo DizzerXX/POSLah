@@ -42,8 +42,8 @@ describe('kitchen ticket reconciliation', () => {
   it('recovers every missed ticket after a long outage', () => {
     const result = reconcile([], [ticket('a'), ticket('b'), ticket('c')]);
 
-    expect(result.recovered).toHaveLength(3);
-    expect(result.tickets).toHaveLength(3);
+    expect(result.recovered).toHaveSize(3);
+    expect(result.tickets).toHaveSize(3);
   });
 
   it('clears tickets that are finished server-side', () => {
@@ -57,7 +57,7 @@ describe('kitchen ticket reconciliation', () => {
   it('notices a line bumped by another screen', () => {
     const result = reconcile([ticket('a')], [ticket('a', 'preparing', 'ready')]);
 
-    expect(result.recovered).toHaveLength(0);
+    expect(result.recovered).toHaveSize(0);
     expect(result.changed).toBe(true);
     expect(result.tickets[0].lines[0].status).toBe('ready');
   });
@@ -70,8 +70,8 @@ describe('kitchen ticket reconciliation', () => {
     const result = reconcile([ticket('a'), ticket('b')], [ticket('a'), ticket('b')]);
 
     expect(result.changed).toBe(false);
-    expect(result.recovered).toHaveLength(0);
-    expect(result.cleared).toHaveLength(0);
+    expect(result.recovered).toHaveSize(0);
+    expect(result.cleared).toHaveSize(0);
   });
 
   /** On reconnect the screen discards what it had rather than replaying missed events. */
