@@ -42,7 +42,7 @@ import { Customer } from '../core/models';
         <p class="muted">Cashiers create these at checkout; they sync up like any other fact.</p>
       </div>
     } @else {
-      <table>
+      <table class="bo-table">
         <thead>
           <tr><th>Name</th><th>Phone</th><th>Email</th><th>Added</th></tr>
         </thead>
@@ -65,12 +65,10 @@ import { Customer } from '../core/models';
     .muted { color: #64748b; font-size: 14px; }
     header p { margin: 4px 0 0; }
     .search {
-      width: 100%; margin: 20px 0; padding: 10px 12px; border: 1px solid #cbd5e1;
-      border-radius: 8px; font-size: 14px;
+      width: 100%; margin: 20px 0; padding: 11px 14px; border: 1px solid var(--bo-line);
+      border-radius: 10px; font-size: 14px; background: var(--bo-surface);
     }
-    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; }
-    th, td { padding: 12px 14px; text-align: left; font-size: 14px; border-bottom: 1px solid #e2e8f0; }
-    th { background: #f1f5f9; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: #475569; }
+    table { background: var(--bo-surface); border: 1px solid var(--bo-line); border-radius: var(--bo-radius); overflow: hidden; }
     .name { font-weight: 600; }
     .empty { padding: 40px; border: 1px dashed #cbd5e1; border-radius: 12px; text-align: center; }
   `,

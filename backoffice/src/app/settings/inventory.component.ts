@@ -54,11 +54,11 @@ import { ApiService } from '../core/api.service';
     :host { display: block; max-width: 720px; padding: 32px 28px; }
     h1 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
     header p { margin: 4px 0 0; }
-    .muted { color: #64748b; font-size: 14px; }
+    .muted { color: var(--bo-muted); font-size: 14px; }
     ul { list-style: none; margin: 24px 0 0; padding: 0; display: grid; gap: 8px; }
     li {
-      display: flex; justify-content: space-between; padding: 14px 16px; background: #fff;
-      border: 1px solid #e2e8f0; border-radius: 10px;
+      display: flex; justify-content: space-between; padding: 14px 16px; background: var(--bo-surface);
+      border: 1px solid var(--bo-line); border-radius: 10px;
     }
     .name { font-weight: 600; font-size: 14px; }
   `,

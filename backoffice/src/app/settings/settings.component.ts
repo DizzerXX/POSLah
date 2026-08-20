@@ -128,27 +128,27 @@ interface PendingChange {
     :host { display: block; max-width: 720px; padding: 32px 28px; }
     h1 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
     header p { margin: 4px 0 0; }
-    .muted { color: #64748b; font-size: 14px; }
+    .muted { color: var(--bo-muted); font-size: 14px; }
     .notice {
       margin: 18px 0 0; padding: 10px 14px; border-radius: 10px;
       background: #f1f5f9; color: #475569; font-size: 13px;
     }
     .group { margin-top: 26px; }
-    h2 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; }
+    h2 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bo-muted); }
     .field {
       display: grid; grid-template-columns: 160px 1fr auto; align-items: center; gap: 12px;
-      padding: 12px 14px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+      padding: 12px 14px; background: var(--bo-surface); border: 1px solid var(--bo-line); border-radius: 10px;
       margin-bottom: 8px; font-size: 14px;
     }
     .field > span { font-weight: 600; color: #334155; }
-    input, select { padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; }
+    input, select { padding: 8px 10px; border: 1px solid var(--bo-line); border-radius: 8px; font: inherit; }
     .save {
-      padding: 8px 14px; border: 0; border-radius: 8px; background: #0f766e; color: #fff;
+      padding: 8px 14px; border: 0; border-radius: 8px; background: var(--bo-accent); color: #fff;
       font-weight: 600; font-size: 13px; cursor: pointer;
     }
     .save:disabled { opacity: 0.35; cursor: default; }
     .backdrop { position: fixed; inset: 0; background: rgb(15 23 42 / 45%); display: grid; place-items: center; }
-    .dialog { width: min(440px, 90vw); padding: 22px; background: #fff; border-radius: 14px; display: grid; gap: 12px; }
+    .dialog { width: min(440px, 90vw); padding: 22px; background: var(--bo-surface); border-radius: 14px; display: grid; gap: 12px; }
     .dialog h3 { margin: 0; font-size: 17px; }
     .diff { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 14px; }
     .from { color: #94a3b8; text-decoration: line-through; }
@@ -159,8 +159,8 @@ interface PendingChange {
       font-size: 13px; line-height: 1.45;
     }
     .actions { display: flex; justify-content: flex-end; gap: 8px; }
-    .primary { padding: 9px 16px; border: 0; border-radius: 8px; background: #0f766e; color: #fff; font-weight: 600; cursor: pointer; }
-    .ghost { padding: 9px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; cursor: pointer; }
+    .primary { padding: 9px 16px; border: 0; border-radius: 8px; background: var(--bo-accent); color: #fff; font-weight: 600; cursor: pointer; }
+    .ghost { padding: 9px 14px; border: 1px solid var(--bo-line); border-radius: 8px; background: var(--bo-surface); cursor: pointer; }
     .toast {
       position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
       padding: 12px 20px; border-radius: 999px; background: #0f172a; color: #fff;

@@ -157,3 +157,14 @@ export interface PosSettings {
   };
   can_edit: boolean;
 }
+
+export interface DashboardData {
+  today: { sales: number; income: MinorUnits };
+  open_stock_exceptions: number;
+  staff: number;
+  inventory: { stockables_tracked: number; below_zero: number; products: number };
+  /** Twelve months ending this one, oldest first. */
+  monthly_income: { month: string; key: string; total: MinorUnits }[];
+  payment_mix: { method: string; orders: number; total: MinorUnits }[];
+  currency: string;
+}

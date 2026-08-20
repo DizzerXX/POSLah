@@ -106,9 +106,9 @@ import { Ingredient, Recipe } from '../core/models';
     :host { display: block; max-width: 820px; padding: 32px 28px; }
     h1 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
     header p { margin: 4px 0 0; max-width: 60ch; }
-    .muted { color: #64748b; font-size: 14px; }
+    .muted { color: var(--bo-muted); font-size: 14px; }
     section {
-      margin-top: 20px; padding: 18px 20px; background: #fff; border: 1px solid #e2e8f0;
+      margin-top: 20px; padding: 18px 20px; background: var(--bo-surface); border: 1px solid var(--bo-line);
       border-radius: 12px;
     }
     .head { display: flex; justify-content: space-between; align-items: baseline; }
@@ -119,15 +119,15 @@ import { Ingredient, Recipe } from '../core/models';
     li { display: flex; align-items: center; gap: 12px; }
     .name { flex: 1; font-size: 14px; }
     .qty { display: flex; align-items: center; gap: 6px; }
-    input { width: 90px; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: right; }
-    select { padding: 7px 8px; border: 1px solid #cbd5e1; border-radius: 8px; }
+    input { width: 90px; padding: 6px 8px; border: 1px solid var(--bo-line); border-radius: 6px; text-align: right; }
+    select { padding: 7px 8px; border: 1px solid var(--bo-line); border-radius: 8px; }
     .add { display: flex; align-items: center; gap: 8px; margin-top: 16px; }
     .spacer { flex: 1; }
     button { cursor: pointer; font-size: 13px; }
-    .primary { padding: 8px 14px; border: 0; border-radius: 8px; background: #0f766e; color: #fff; font-weight: 600; }
+    .primary { padding: 8px 14px; border: 0; border-radius: 8px; background: var(--bo-accent); color: #fff; font-weight: 600; }
     .primary:disabled { opacity: 0.5; cursor: default; }
-    .ghost { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; }
-    .empty { margin-top: 24px; padding: 40px; border: 1px dashed #cbd5e1; border-radius: 12px; text-align: center; }
+    .ghost { padding: 6px 10px; border: 1px solid var(--bo-line); border-radius: 8px; background: var(--bo-surface); }
+    .empty { margin-top: 24px; padding: 40px; border: 1px dashed var(--bo-line); border-radius: 12px; text-align: center; }
     .error { margin-top: 16px; color: #b91c1c; }
   `,
 })

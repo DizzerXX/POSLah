@@ -36,7 +36,7 @@ import { StockException } from '../core/models';
     <nav>
       @for (option of filters; track option.value) {
         <button
-          class="chip"
+          class="chip bo-btn-ghost"
           [class.on]="filter() === option.value"
           (click)="setFilter(option.value)"
         >
@@ -63,7 +63,7 @@ import { StockException } from '../core/models';
             <div class="main">
               <div class="title">
                 <span class="name">{{ exception.stockable_name }}</span>
-                <span class="badge" [class.open]="exception.status === 'open'">
+                <span class="bo-pill" [class.bo-pill--danger]="exception.status === 'open'" [class.bo-pill--ok]="exception.status !== 'open'">
                   {{ exception.status }}
                 </span>
                 <span class="kind">{{
@@ -157,21 +157,21 @@ import { StockException } from '../core/models';
     :host { display: block; max-width: 1000px; margin: 0 auto; padding: 32px 24px 64px; }
     header { display: flex; justify-content: space-between; align-items: flex-start; }
     h1 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
-    .sub { margin: 4px 0 0; color: #64748b; font-size: 14px; }
+    .sub { margin: 4px 0 0; color: var(--bo-muted); font-size: 14px; }
     .who { display: flex; align-items: center; gap: 12px; font-size: 14px; color: #475569; }
     nav { display: flex; gap: 8px; margin: 24px 0 16px; }
     .chip {
-      padding: 6px 14px; border: 1px solid #cbd5e1; border-radius: 999px; cursor: pointer;
-      background: #fff; font-size: 13px; color: #334155;
+      padding: 6px 14px; border: 1px solid var(--bo-line); border-radius: 999px; cursor: pointer;
+      background: var(--bo-surface); font-size: 13px; color: #334155;
     }
-    .chip.on { background: #0f766e; border-color: #0f766e; color: #fff; }
+    .chip.on { background: var(--bo-accent); border-color: var(--bo-accent); color: #fff; }
     .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
     .row {
       display: flex; justify-content: space-between; gap: 24px; padding: 18px 20px;
-      border: 1px solid #e2e8f0; border-left: 4px solid #dc2626; border-radius: 12px;
-      background: #fff;
+      border: 1px solid var(--bo-line); border-left: 4px solid var(--bo-danger);
+      border-radius: var(--bo-radius); background: var(--bo-surface); box-shadow: var(--bo-shadow);
     }
-    .row.resolved { border-left-color: #16a34a; opacity: 0.75; }
+    .row.resolved { border-left-color: var(--bo-ok); opacity: 0.75; }
     .title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .name { font-weight: 600; font-size: 16px; }
     .badge {
@@ -193,19 +193,19 @@ import { StockException } from '../core/models';
     .action { display: flex; align-items: flex-start; }
     .stocktake { display: grid; gap: 8px; width: 260px; }
     .stocktake label { display: grid; gap: 4px; font-size: 12px; font-weight: 600; color: #334155; }
-    .stocktake input { padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; }
+    .stocktake input { padding: 8px 10px; border: 1px solid var(--bo-line); border-radius: 8px; }
     .buttons { display: flex; gap: 8px; justify-content: flex-end; }
     button { cursor: pointer; font-size: 13px; }
     .primary {
-      padding: 9px 14px; border: 0; border-radius: 8px; background: #0f766e; color: #fff;
+      padding: 9px 14px; border: 0; border-radius: 10px; background: var(--bo-accent); color: #fff;
       font-weight: 600;
     }
     .primary:disabled { opacity: 0.6; cursor: default; }
-    .ghost { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; }
-    .empty { padding: 40px; border: 1px dashed #cbd5e1; border-radius: 12px; text-align: center; }
-    .muted { color: #64748b; }
+    .ghost { padding: 8px 12px; border: 1px solid var(--bo-line); border-radius: 8px; background: var(--bo-surface); }
+    .empty { padding: 40px; border: 1px dashed var(--bo-line); border-radius: 12px; text-align: center; }
+    .muted { color: var(--bo-muted); }
     .tiny { font-size: 11px; margin: 0; }
-    .sep { color: #cbd5e1; margin: 0 6px; }
+    .sep { color: var(--bo-line); margin: 0 6px; }
     .error { margin-top: 16px; color: #b91c1c; }
   `,
 })

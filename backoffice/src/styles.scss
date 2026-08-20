@@ -1,15 +1,121 @@
+/**
+ * The backoffice design language.
+ *
+ * Blue, roomy, and information-dense — a merchant reads this sitting down, comparing
+ * numbers. That is the opposite of the till's job, which is why the two apps deliberately
+ * share no theme despite sharing an API.
+ *
+ * Everything is a token so a repaint is one file rather than a search across components.
+ */
 :root {
+  --bo-accent: #0b6bf2;
+  --bo-accent-strong: #0a5ed6;
+  --bo-accent-soft: #eaf2ff;
+
+  --bo-ink: #1b2130;
+  --bo-muted: #6b7385;
+  --bo-line: #e9ecf2;
+  --bo-surface: #ffffff;
+  --bo-canvas: #f7f8fa;
+
+  --bo-ok: #16a34a;
+  --bo-ok-soft: #e7f7ed;
+  --bo-warn: #b45309;
+  --bo-warn-soft: #fff3e0;
+  --bo-danger: #dc2626;
+  --bo-danger-soft: #fdeaea;
+  --bo-neutral-soft: #eef0f5;
+
+  --bo-radius: 14px;
+  --bo-shadow: 0 1px 2px rgb(16 24 40 / 5%);
+
   color-scheme: light;
 }
 
-html,
-body {
+* { box-sizing: border-box; }
+
+html, body {
   margin: 0;
-  background: #f8fafc;
-  color: #0f172a;
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    sans-serif;
+  height: 100%;
+  background: var(--bo-canvas);
+  color: var(--bo-ink);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
+
+button { font: inherit; cursor: pointer; }
+
+/* ---- shared primitives ------------------------------------------------- */
+
+.bo-card {
+  background: var(--bo-surface);
+  border: 1px solid var(--bo-line);
+  border-radius: var(--bo-radius);
+  box-shadow: var(--bo-shadow);
+}
+
+.bo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--bo-accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+}
+.bo-btn:hover { background: var(--bo-accent-strong); }
+.bo-btn:disabled { opacity: 0.45; cursor: default; }
+
+.bo-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid var(--bo-line);
+  border-radius: 10px;
+  background: var(--bo-surface);
+  color: var(--bo-ink);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Status pills. Each state carries its own colour so a row is scannable without reading. */
+.bo-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.bo-pill--ok { background: var(--bo-ok-soft); color: var(--bo-ok); }
+.bo-pill--warn { background: var(--bo-warn-soft); color: var(--bo-warn); }
+.bo-pill--danger { background: var(--bo-danger-soft); color: var(--bo-danger); }
+.bo-pill--neutral { background: var(--bo-neutral-soft); color: var(--bo-muted); }
+
+/* Tables. One definition, so every list in the app reads identically. */
+.bo-table { width: 100%; border-collapse: collapse; }
+.bo-table th {
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--bo-ink);
+  border-bottom: 1px solid var(--bo-line);
+}
+.bo-table td {
+  padding: 15px 16px;
+  text-align: left;
+  font-size: 14px;
+  color: var(--bo-ink);
+  border-bottom: 1px solid var(--bo-line);
+}
+.bo-table tbody tr:last-child td { border-bottom: 0; }
+.bo-table tbody tr:hover { background: var(--bo-canvas); }
+
+.bo-muted { color: var(--bo-muted); }

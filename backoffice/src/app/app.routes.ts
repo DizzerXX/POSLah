@@ -24,6 +24,10 @@ export const routes: Routes = [
     loadComponent: () => import('./shell/shell.component').then((m) => m.ShellComponent),
     children: [
       {
+        path: 'dashboard',
+        loadComponent: () => import('./dashboard/dashboard.component').then((m) => m.DashboardComponent),
+      },
+      {
         path: 'stock-exceptions',
         loadComponent: () =>
           import('./stock-exceptions/stock-exceptions.component').then(
@@ -59,7 +63,7 @@ export const routes: Routes = [
         loadComponent: () => import('./settings/inventory.component').then((m) => m.InventoryComponent),
         data: { vertical: 'fnb' },
       },
-      { path: '', pathMatch: 'full', redirectTo: 'stock-exceptions' },
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },
   // The KDS sits outside the backoffice shell: it runs full-screen on a kitchen tablet and

@@ -54,13 +54,13 @@ import { ApiService } from '../core/api.service';
     :host { display: block; max-width: 720px; padding: 32px 28px; }
     h1 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
     header p { margin: 4px 0 0; }
-    .muted { color: #64748b; font-size: 14px; }
+    .muted { color: var(--bo-muted); font-size: 14px; }
     .cards { display: grid; gap: 12px; margin-top: 24px; }
     .card {
-      display: flex; gap: 14px; padding: 18px; background: #fff; border: 1px solid #e2e8f0;
+      display: flex; gap: 14px; padding: 18px; background: var(--bo-surface); border: 1px solid var(--bo-line);
       border-radius: 12px; cursor: pointer;
     }
-    .card.on { border-color: #0f766e; box-shadow: inset 3px 0 0 #0f766e; }
+    .card.on { border-color: var(--bo-accent); box-shadow: inset 3px 0 0 var(--bo-accent); }
     .card p { margin: 4px 0 0; }
     .warn { color: #b45309; font-size: 13px; }
     .error { margin-top: 16px; color: #b91c1c; }

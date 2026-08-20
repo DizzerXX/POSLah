@@ -78,7 +78,7 @@ export class SignInComponent {
     this.error.set(null);
 
     this.api.login(this.email, this.password).subscribe({
-      next: () => void this.router.navigate(['/stock-exceptions']),
+      next: () => void this.router.navigate(['/dashboard']),
       error: (response) => {
         this.busy.set(false);
         // One message for every failure mode, matching the server: distinguishing them

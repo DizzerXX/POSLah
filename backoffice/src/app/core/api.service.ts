@@ -8,6 +8,7 @@ import {
   Account,
   AuthenticatedUser,
   Customer,
+  DashboardData,
   Ingredient,
   KitchenTicket,
   LoginResponse,
@@ -111,6 +112,10 @@ export class ApiService {
       `${this.baseUrl}/api/v1/kitchen/lines/${lineId}`,
       { status },
     );
+  }
+
+  dashboard() {
+    return this.http.get<{ data: DashboardData }>(`${this.baseUrl}/api/v1/dashboard`);
   }
 
   settings() {

@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\Backoffice\AccountModuleController;
 use App\Http\Controllers\Api\V1\Backoffice\CatalogController;
 use App\Http\Controllers\Api\V1\Backoffice\CustomerController;
+use App\Http\Controllers\Api\V1\Backoffice\DashboardController;
 use App\Http\Controllers\Api\V1\Backoffice\DeviceController;
 use App\Http\Controllers\Api\V1\Backoffice\RecipeController;
 use App\Http\Controllers\Api\V1\Backoffice\SettingsController;
@@ -53,6 +54,8 @@ Route::prefix('v1')->group(function () {
         Route::get('devices', [DeviceController::class, 'index'])->name('devices.index');
         Route::post('devices', [DeviceController::class, 'store'])->name('devices.store');
         Route::patch('devices/{device}', [DeviceController::class, 'update'])->name('devices.update');
+
+        Route::get('dashboard', DashboardController::class)->name('dashboard');
 
         Route::get('settings', [SettingsController::class, 'show'])->name('settings.show');
         Route::patch('settings', [SettingsController::class, 'update'])->name('settings.update');
