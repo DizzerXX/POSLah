@@ -201,6 +201,8 @@ class DemoAccountSeeder extends Seeder
 
         // Menu items: routed to the kitchen, tracks_stock false, stock lives in the recipe.
         $menu = [
+            // Photography is optional and usually absent — the grid falls back to a
+            // typographic tile. A couple of items carry one so both paths are visible.
             [$espresso, 'Flat White', 1200, [
                 'House Espresso Blend' => '18.000',
                 'Fresh Milk' => '180.000',
@@ -230,10 +232,17 @@ class DemoAccountSeeder extends Seeder
         /** @var array<string, Product> $products */
         $products = [];
 
+        $photos = [
+            'Latte' => 'https://images.unsplash.com/photo-1561047029-3000c68339ca?w=400&q=70',
+            'Cheeseburger' => 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=70',
+            'Nasi Lemak Ayam' => 'https://images.unsplash.com/photo-1567337710282-00832b415979?w=400&q=70',
+        ];
+
         foreach ($menu as [$category, $name, $price, $recipe]) {
             $product = Product::factory()->for($account)->for($category)->menuItem()->create([
                 'name' => $name,
                 'price' => $price,
+                'image_url' => $photos[$name] ?? null,
             ]);
 
             $products[$name] = $product;
