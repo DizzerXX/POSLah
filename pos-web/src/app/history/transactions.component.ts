@@ -31,9 +31,14 @@ import { PosOrder, formatMoney } from '../core/models';
         </div>
 
         @if (mode() === 'report') {
-          <button class="pos-btn-ghost" (click)="downloadCsv()" data-testid="download-csv">
-            Download CSV
-          </button>
+          <div class="exports">
+            <button class="pos-btn-ghost" (click)="downloadCsv()" data-testid="download-csv">
+              CSV
+            </button>
+            <button class="pos-btn-ghost" (click)="downloadPdf()" data-testid="download-pdf">
+              PDF
+            </button>
+          </div>
         }
       </header>
 
@@ -81,6 +86,7 @@ import { PosOrder, formatMoney } from '../core/models';
     h1 { margin: 0; font-size: 22px; }
     header p { margin: 4px 0 0; max-width: 62ch; }
     .muted { color: var(--pos-muted); font-size: 13px; }
+    .exports { display: flex; gap: 8px; }
     .totals { display: flex; gap: 12px; margin-top: 16px; }
     .stat {
       display: grid; gap: 2px; padding: 12px 16px; min-width: 130px;
@@ -138,12 +144,11 @@ export class TransactionsComponent {
   }
 
   /**
-   * CSV rather than PDF.
+   * CSV alongside PDF.
    *
-   * A spreadsheet is what a merchant actually does something with, and it needs no
-   * dependency and no server round trip. PDF export is deliberately left out rather than
-   * half-built — it wants a real template, and the backoffice has its own unimplemented
-   * export button waiting for the same decision.
+   * A spreadsheet is what a merchant reconciles with; a PDF is what they hand to someone.
+   * Both are generated in the browser rather than on the server — the rows are already here,
+   * and a server round trip would add a rendering stack for something the client can do.
    *
    * Money is written in major units here because that is what a spreadsheet expects, and it
    * is the only place in the codebase that converts.
@@ -175,5 +180,55 @@ export class TransactionsComponent {
     link.click();
 
     URL.revokeObjectURL(url);
+  }
+
+  /**
+   * The same rows as the CSV, laid out to be read rather than reconciled.
+   *
+   * Totals are drawn from the same computed signals the screen uses, so the document and
+   * the page can never disagree about what a day took.
+   */
+  async downloadPdf(): Promise<void> {
+    // Loaded on demand: a till that never exports should not pay for a PDF engine on boot.
+    const { jsPDF } = await import('jspdf');
+    const autoTable = (await import('jspdf-autotable')).default;
+
+    const doc = new jsPDF({ orientation: 'landscape' });
+    const generated = new Date();
+
+    doc.setFontSize(16);
+    doc.text('POSlah — sales report', 14, 18);
+
+    doc.setFontSize(10);
+    doc.setTextColor(110);
+    doc.text(
+      [
+        `Generated ${generated.toLocaleString()}`,
+        `${this.orders().length} orders · takings ${this.money(this.takings())} · tax ${this.money(this.tax())}`,
+      ].join('    '),
+      14,
+      25,
+    );
+
+    autoTable(doc, {
+      startY: 32,
+      head: [['Order', 'Date', 'Service', 'Table', 'Items', 'Subtotal', 'Tax', 'Total', 'Status']],
+      body: this.orders().map((order) => [
+        order.order_number ?? order.id.slice(0, 8),
+        order.occurred_at ? new Date(order.occurred_at).toLocaleString() : '—',
+        order.service_type === 'takeaway' ? 'Takeaway' : 'Dine in',
+        order.table ?? '—',
+        String(this.itemCount(order)),
+        this.money(order.subtotal),
+        this.money(order.tax_total),
+        this.money(order.grand_total),
+        order.status,
+      ]),
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [244, 81, 30] },
+      columnStyles: { 5: { halign: 'right' }, 6: { halign: 'right' }, 7: { halign: 'right' } },
+    });
+
+    doc.save(`poslah-report-${generated.toISOString().slice(0, 10)}.pdf`);
   }
 }

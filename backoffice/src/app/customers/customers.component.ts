@@ -21,8 +21,13 @@ import { Customer } from '../core/models';
   imports: [FormsModule, DatePipe],
   template: `
     <header>
-      <h1>Customers</h1>
-      <p class="muted">Shared across {{ verticals() }}</p>
+      <div>
+        <h1>Customers</h1>
+        <p class="muted">Shared across {{ verticals() }}</p>
+      </div>
+      <button class="bo-btn-ghost" (click)="downloadCsv()" data-testid="customers-csv">
+        Download CSV
+      </button>
     </header>
 
     <input
@@ -61,6 +66,7 @@ import { Customer } from '../core/models';
   `,
   styles: `
     :host { display: block; max-width: 900px; padding: 32px 28px; }
+    header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
     h1 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
     .muted { color: #64748b; font-size: 14px; }
     header p { margin: 4px 0 0; }
@@ -88,6 +94,34 @@ export class CustomersComponent {
 
   constructor() {
     this.load();
+  }
+
+  /**
+   * CSV, generated here rather than on the server: the rows are already loaded, and a
+   * download endpoint would be a second query returning the same thing in another format.
+   */
+  downloadCsv(): void {
+    const header = ['Name', 'Phone', 'Email', 'Added'];
+
+    const rows = this.customers().map((customer) => [
+      customer.name,
+      customer.phone ?? '',
+      customer.email ?? '',
+      customer.created_at ?? '',
+    ]);
+
+    const csv = [header, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(','))
+      .join('\n');
+
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = `poslah-customers-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+
+    URL.revokeObjectURL(url);
   }
 
   load(): void {
